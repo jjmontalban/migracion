@@ -1,0 +1,81 @@
+2025-03-21 13:10:27 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-21 13:10:27 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 13:10:27 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-21 13:10:27 - Migración de c4_blocks finalizada para post 21751 (13 bloques)
+
+2025-03-21 13:12:37 - [LOG] M05 Testimonios -> autor='autor', quote='esta es la cita'
+2025-03-21 13:12:37 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 13:12:37 - [LOG] M07 Slider-galeria -> repCount=2
+2025-03-21 13:12:37 - [LOG] Insert slider-testimonios block in DB for index=8
+2025-03-21 13:12:37 - [LOG] Insert cabecera block in DB for index=9, title=titulo del campo especial
+2025-03-21 13:12:37 - [LOG] Insert slider-galeria block in DB for index=12
+2025-03-21 13:12:37 - Migración c4_blocks finalizada para post 21752
+
+2025-03-21 13:18:19 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-21 13:18:19 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 13:18:19 - [LOG] M07 Slider-galeria -> repCount=2
+2025-03-21 13:18:19 - Migración c4_blocks finalizada para post 21753. Se insertaron 13 bloque(s).
+2025-03-21 13:19:11 - [LOG] M05 Testimonios -> autor='autor', quote='esta es la cita'
+2025-03-21 13:19:11 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 13:19:11 - [LOG] M07 Slider-galeria -> repCount=2
+2025-03-21 13:19:11 - [LOG] Insert slider-testimonios block in DB for index=8
+2025-03-21 13:19:11 - [LOG] Insert cabecera block in DB for index=9, title=titulo del campo especial
+2025-03-21 13:19:11 - [LOG] Insert slider-galeria block in DB for index=12
+2025-03-21 13:19:11 - Migración c4_blocks finalizada para post 21754
+
+2025-03-21 13:40:37 - [LOG] M05 Testimonios -> autor='autor', quote='esta es la cita'
+2025-03-21 13:40:37 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 13:40:37 - [LOG] M07 Slider-galeria -> repCount=2
+2025-03-21 13:40:37 - [LOG] Insert slider-testimonios block in DB for index=8
+2025-03-21 13:40:37 - [LOG] Insert cabecera block in DB for index=9, title=titulo del campo especial
+2025-03-21 13:40:37 - [LOG] Insert slider-galeria block in DB for index=12
+2025-03-21 13:40:37 - Migración c4_blocks finalizada para post 21756
+
+2025-03-21 13:41:28 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-21 13:41:28 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 13:41:28 - [LOG] M07 Slider-galeria -> repCount=2
+2025-03-21 13:41:28 - Migración c4_blocks finalizada para post 21757. Se insertaron 13 bloque(s).
+2025-03-21 14:04:34 - [LOG] M05 Testimonios -> autor='autor', quote='esta es la cita'
+2025-03-21 14:04:34 - [LOG] M06 Cabecera -> titulo='titulo del campo especial'
+2025-03-21 14:04:34 - [LOG] M07 Slider-galeria -> repCount=2
+2025-03-21 14:04:34 - Migración c4_blocks finalizada para post 21759, se generaron 13 bloques
+2025-03-22 15:31:17 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 15:31:17 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 15:31:17 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 15:31:17 - [LOG] Insert slider-testimonios block => index=8
+2025-03-22 15:31:17 - [LOG] Insert cabecera => index=9, title=titulo del campo especial
+2025-03-22 15:31:17 - [LOG] Insert slider-galeria => index=12
+2025-03-22 15:31:17 - Migración c4_blocks finalizada para post 22271 => 13 bloques
+2025-03-22 15:39:16 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 15:39:16 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 15:39:16 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 15:39:16 - [LOG] Insert slider-testimonios block => index=8
+2025-03-22 15:39:16 - [LOG] Insert cabecera => index=9, title=titulo del campo especial
+2025-03-22 15:39:16 - [LOG] Insert slider-galeria => index=12
+2025-03-22 15:39:16 - Migración c4_blocks finalizada para post 22283 => 13 bloques
+2025-03-22 15:42:03 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 15:42:03 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 15:42:03 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 15:42:03 - [LOG] Insert slider-testimonios block => index=8
+2025-03-22 15:42:03 - [LOG] Insert cabecera => index=9, title=titulo del campo especial
+2025-03-22 15:42:03 - [LOG] Insert slider-galeria => index=12
+2025-03-22 15:42:03 - Migración c4_blocks finalizada para post 22284 => 13 bloques
+2025-03-22 15:47:31 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 15:47:31 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 15:47:31 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 15:47:31 - [LOG] Insert slider-testimonios block => index=8
+2025-03-22 15:47:31 - [LOG] Insert cabecera => index=9, title=titulo del campo especial
+2025-03-22 15:47:31 - [LOG] Insert slider-galeria => index=12
+2025-03-22 15:47:31 - Migración c4_blocks finalizada para post 22286 => 13 bloques
+2025-03-22 15:55:31 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 15:55:31 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 15:55:31 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 15:55:31 - Migración c4_blocks finalizada para post 22290 => 13 bloques
+2025-03-22 16:05:31 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 16:05:31 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 16:05:31 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 16:05:31 - Migración c4_blocks finalizada para post 22291 => 13 bloques
+2025-03-22 16:10:29 - [LOG] M05 Testimonios => autor='autor', quote='esta es la cita'
+2025-03-22 16:10:29 - [LOG] M06 Cabecera => titulo='titulo del campo especial'
+2025-03-22 16:10:29 - [LOG] M07 Slider-galeria => repCount=2
+2025-03-22 16:10:29 - Migración c4_blocks finalizada para post 22292 => 13 bloques
