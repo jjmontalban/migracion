@@ -24,20 +24,31 @@ function extractImageId($value) {
 
 /**
  * Bloque: text-multiple-columns (2 columnas)
+ * Si encuentra un <a> con clase exactamente "btn-buy btn_green" (en cualquier orden)
+ * y sin ninguna clase adicional, las reemplaza por
+ * "bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right".
  */
 function buildTextMultipleColumns($i, $metaData, $flexField) {
     $key = "{$flexField}_{$i}_noticias_texto";
     $content = $metaData[$key] ?? '';
+
     if (empty($content)) {
         return null;
     }
 
+    // 1. Localizar <a> con clases 'btn-buy btn_green' (sin clases extras) y reemplazar
+    $pattern = '/<a([^>]*)class="(?:btn-buy\s+btn_green|btn_green\s+btn-buy)"([^>]*)>/i';
+    $replacement = '<a$1class="bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right"$2>';
+    $content = preg_replace($pattern, $replacement, $content);
+
+    // 2. Retornar el bloque con las columnas
     return [
         'type'        => 'text-multiple-columns',
         'b29_columns' => '2',
         'b29_content' => $content
     ];
 }
+
 
 /**
  * Bloque: image
