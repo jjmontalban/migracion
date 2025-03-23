@@ -1,6 +1,6 @@
 <?php
 /**
- * Obtiene todos los metadatos de una noticia desde la tabla origen "{$orig_prefix}postmeta".
+ * Trae los metadatos desde "{$orig_prefix}postmeta
  */
 function getMetaData($post_id, $conn, $orig_prefix) {
     $metaData = [];
@@ -19,7 +19,7 @@ function getMetaData($post_id, $conn, $orig_prefix) {
 }
 
 /**
- * Inserta los metadatos en la base de datos destino "{$dest_prefix}postmeta".
+ * Inserta los metadatos en {$dest_prefix}postmeta
  */
 function insertMetaData($post_id, $metaData, $conn, $dest_prefix) {
     foreach ($metaData as $key => $value) {
@@ -34,7 +34,7 @@ function insertMetaData($post_id, $metaData, $conn, $dest_prefix) {
 }
 
 /**
- * Inserta campos ACF personalizados: "c4_title" y "c4_excerpt"
+ * Inserta campos ACF titulo_corto y descripcion_corta
  *  - c4_title (field_67d02372ea16f)
  *  - c4_excerpt (field_67d02390ea170)
  */
@@ -67,7 +67,7 @@ function insertShortTextACF($post_id, $metaData, $conn, $dest_prefix) {
 }
 
 /**
- * Migrar categorías y etiquetas del post.
+ * Migra categorías y etiquetas del post
  */
 function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
     $sql = "
