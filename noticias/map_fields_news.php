@@ -83,11 +83,9 @@ function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn,
         $taxonomy = $row['taxonomy'];
         $term_id  = (int)$row['term_id'];
 
-        // Solo migramos category y post_tag
-        if ($taxonomy === 'category' || $taxonomy === 'post_tag') {
-            $sql_term = "SELECT * FROM {$orig_prefix}terms WHERE term_id = $term_id";
-            $res_term = $origin_conn->query($sql_term);
-            if ($res_term && $res_term->num_rows > 0) {
+        $sql_term = "SELECT * FROM {$orig_prefix}terms WHERE term_id = $term_id";
+        $res_term = $origin_conn->query($sql_term);
+        if ($res_term && $res_term->num_rows > 0) {
                 $term_data = $res_term->fetch_assoc();
                 $term_name = $dest_conn->real_escape_string($term_data['name']);
                 $term_slug = $dest_conn->real_escape_string($term_data['slug']);
@@ -141,7 +139,6 @@ function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn,
                         VALUES ($new_post_id, $dest_tt_id, 0)
                     ");
                 }
-            }
         }
     }
 }
