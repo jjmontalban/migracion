@@ -23,29 +23,29 @@ $dest_conn = getConnection($host, $user, $pass, $db_dest);
 // Determinar qué migrar según argumento en la URL
 $tipo = isset($_GET['tipo']) ? $_GET['tipo'] : 'todo';
 
-require_once 'noticias/migrate_news.php';
-require_once 'conferencias/migrate_conferences.php';
-require_once 'exposiciones/migrate_exhibitions.php';
+require_once 'noticias/migrateNews.php';
+//require_once 'conferencias/migrateConferences.php';
+//require_once 'exposiciones/migrateExhibitions.php';
 
 switch ($tipo) {
     case 'noticias':
         flush(); ob_flush();
-        migrate_news($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        migrateNews($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
         break;
 
     case 'conferencias':
-        migrate_conferences($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        //migrateConferences($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
         break;
 
     case 'exposiciones':
-        migrate_exhibitions($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        //migrateExhibitions($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
         break;
 
     case 'todo':
     default:
-        migrate_news($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
-        migrate_conferences($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
-        migrate_exhibitions($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        migrateNews($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        //migrateConferences($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        //migrateExhibitions($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
         break;
 }
 

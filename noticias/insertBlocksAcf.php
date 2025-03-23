@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/parse_layout_block.php';
+require_once __DIR__ . '/parseLayoutBlock.php';
 
 /**
  * Inserta los bloques ACF (campo flexible c4_blocks) en el post destino.

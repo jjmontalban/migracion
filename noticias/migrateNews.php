@@ -3,10 +3,10 @@
  * Script de migración para Noticias
  */
 
-require_once __DIR__ . '/map_fields_news.php';
-require_once __DIR__ . '/map_blocks_news.php';
-require_once __DIR__ . '/parse_layout_block.php';
-require_once __DIR__ . '/insert_blocks_acf.php';
+require_once __DIR__ . '/mapFieldsNews.php';
+require_once __DIR__ . '/mapBlocksNews.php';
+require_once __DIR__ . '/parseLayoutBlock.php';
+require_once __DIR__ . '/insertBlocksAcf.php';
 
 /**
  * Función principal para migrar noticias.
@@ -16,13 +16,15 @@ require_once __DIR__ . '/insert_blocks_acf.php';
  * @param string $orig_prefix  Prefijo de tablas en origen
  * @param string $dest_prefix  Prefijo de tablas en destino
  */
-function migrate_news($origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
+function migrateNews($origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
 
     // 1) Obtener IDs de posts tipo 'noticias'
     $sql = "SELECT ID
             FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
-              AND post_status = 'publish'";
+              AND post_status = 'publish'
+              AND ID = 328325
+              LIMIT 10";
 
     $result = $origin_conn->query($sql);
 
