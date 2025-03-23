@@ -77,7 +77,8 @@ function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn,
         WHERE tr.object_id = $orig_id
     ";
     $res = $origin_conn->query($sql);
-    if (!$res || $res->num_rows === 0) return;
+
+    if(!$res || $res->num_rows === 0) return;
 
     while ($row = $res->fetch_assoc()) {
         $taxonomy = $row['taxonomy'];
@@ -85,6 +86,7 @@ function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn,
 
         $sql_term = "SELECT * FROM {$orig_prefix}terms WHERE term_id = $term_id";
         $res_term = $origin_conn->query($sql_term);
+        
         if ($res_term && $res_term->num_rows > 0) {
                 $term_data = $res_term->fetch_assoc();
                 $term_name = $dest_conn->real_escape_string($term_data['name']);

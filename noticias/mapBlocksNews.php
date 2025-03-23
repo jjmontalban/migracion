@@ -1,15 +1,7 @@
 <?php
 
 /**
- * Log para debug (archivo local migracion.log en esta carpeta).
- */
-function writeLog($message) {
-    $logFile = __DIR__ . '/migracion.log';
-    file_put_contents($logFile, date('Y-m-d H:i:s') . ' - ' . $message . "\n", FILE_APPEND);
-}
-
-/**
- * Extrae el ID de una imagen, sea numérico o serializado.
+ * Extrae el ID de una imagen
  */
 function extractImageId($value) {
     if (is_numeric($value)) {
@@ -24,9 +16,6 @@ function extractImageId($value) {
 
 /**
  * Bloque: text-multiple-columns (2 columnas)
- * Si encuentra un <a> con clase exactamente "btn-buy btn_green" (en cualquier orden)
- * y sin ninguna clase adicional, las reemplaza por
- * "bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right".
  */
 function buildTextMultipleColumns($i, $metaData, $flexField) {
     $key = "{$flexField}_{$i}_noticias_texto";
@@ -36,19 +25,18 @@ function buildTextMultipleColumns($i, $metaData, $flexField) {
         return null;
     }
 
-    // 1. Localizar <a> con clases 'btn-buy btn_green' (sin clases extras) y reemplazar
+    // Si encuentra un <a> con clase "btn-buy btn_green" las reemplaza por
+    // "bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right".
     $pattern = '/<a([^>]*)class="(?:btn-buy\s+btn_green|btn_green\s+btn-buy)"([^>]*)>/i';
     $replacement = '<a$1class="bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right"$2>';
     $content = preg_replace($pattern, $replacement, $content);
 
-    // 2. Retornar el bloque con las columnas
     return [
         'type'        => 'text-multiple-columns',
         'b29_columns' => '2',
         'b29_content' => $content
     ];
 }
-
 
 /**
  * Bloque: image
@@ -81,13 +69,11 @@ function buildVideoBlock($i, $metaData, $flexField) {
         return null;
     }
 
-    $title = $metaData['__post_title'] ?? ''; // ← recupera aquí
-
     return [
         'type'       => 'video',
         'b37_design' => 'grid',
         'b37_url'    => $url,
-        'b37_title'  => $title
+        'b37_title'  => $metaData['__post_title']
     ];
 }
 
@@ -105,7 +91,6 @@ function buildIframeBlock($i, $metaData, $flexField) {
     $alt    = $metaData[$altKey] ?? '';
     $type   = $metaData[$typeKey] ?? '';
 
-    // Si no hay script ni ID, no creamos
     if (empty($script) && empty($id)) {
         return null;
     }
@@ -119,35 +104,6 @@ function buildIframeBlock($i, $metaData, $flexField) {
     ];
 }
 
-/**
- * Bloque: image-text-slider (testimonios)
- */
-function buildImageTextSlider($i, $metaData, $flexField) {
-    $quoteKey = "{$flexField}_{$i}_noticia_cita_texto";
-    $nameKey  = "{$flexField}_{$i}_noticia_cita_autor";
-    $jobKey   = "{$flexField}_{$i}_noticia_cita_autor_rol";
-    $imgKey   = "{$flexField}_{$i}_noticia_cita_autor_imagen";
-
-    $quote = $metaData[$quoteKey] ?? '';
-    $name  = $metaData[$nameKey]  ?? '';
-    $job   = $metaData[$jobKey]   ?? '';
-    $imgId = extractImageId($metaData[$imgKey] ?? '');
-
-    if (empty($quote) && empty($name)) {
-        return null;
-    }
-
-    return [
-        'type'      => 'image-text-slider',
-        'b25_title' => ' ',
-        'b25_items' => [[
-            'b25i_quote' => $quote,
-            'b25i_name'  => $name,
-            'b25i_job'   => $job,
-            'b25i_image' => $imgId
-        ]]
-    ];
-}
 
 /**
  * Bloque especial: heading + N x text-multiple-columns
@@ -250,3 +206,5 @@ function buildGallerySlider($i, $metaData, $flexField) {
         'captions' => $captions
     ];
 }
+
+

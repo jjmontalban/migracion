@@ -1,6 +1,6 @@
 <?php
 /**
- * Script de migración para Noticias
+ * migración de Noticias
  */
 
 require_once __DIR__ . '/mapFieldsNews.php';
@@ -8,17 +8,10 @@ require_once __DIR__ . '/mapBlocksNews.php';
 require_once __DIR__ . '/parseLayoutBlock.php';
 require_once __DIR__ . '/insertBlocksAcf.php';
 
-/**
- * Función principal para migrar noticias.
- *
- * @param mysqli $origin_conn  Conexión a la BD de origen
- * @param mysqli $dest_conn    Conexión a la BD de destino
- * @param string $orig_prefix  Prefijo de tablas en origen
- * @param string $dest_prefix  Prefijo de tablas en destino
- */
+
 function migrateNews($origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
 
-    // 1) Obtener IDs de posts tipo 'noticias'
+    // 1) Obtener noticias
     $sql = "SELECT ID
             FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
@@ -36,11 +29,11 @@ function migrateNews($origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
     echo "Se encontraron " . $result->num_rows . " noticias\n";
     flush(); ob_flush();
 
-    // Recorrer cada noticia
+    // Recorrer noticia
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
 
-        // Obtener datos principales del post
+        // Obtener datos del post
         $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
         $res_post = $origin_conn->query($sql_post);
         if (!$res_post || $res_post->num_rows === 0) {
@@ -49,7 +42,7 @@ function migrateNews($origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
         }
         $post_data = $res_post->fetch_assoc();
 
-        // Insertar el post en tabla destino (tipo 'news')
+        // Insertar el post en destino ('news')
         $title   = $dest_conn->real_escape_string($post_data['post_title']);
         $excerpt = $dest_conn->real_escape_string($post_data['post_excerpt']);
         $content = $dest_conn->real_escape_string($post_data['post_content']);

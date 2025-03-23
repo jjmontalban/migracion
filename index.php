@@ -3,24 +3,19 @@
 // CONFIGURACIÓN Y EJECUCIÓN PRINCIPAL
 // ===================================================
 
-// Configuración de la base de datos
+// Configuración de las bases de datos
 $host = 'localhost';
 $user = 'root';
 $pass = '';
-/* $db_orig = 'backup_pro'; */
 $db_orig = 'wi';
 $db_dest = 'web-wi';
 
-// Prefijos de tablas en origen y en destino
 $orig_prefix = 'wi_';
 $dest_prefix = 'ftwi_';
 
-
-// Conectar a BD origen y destino
 $orig_conn = getConnection($host, $user, $pass, $db_orig);
 $dest_conn = getConnection($host, $user, $pass, $db_dest);
 
-// Determinar qué migrar según argumento en la URL
 $tipo = isset($_GET['tipo']) ? $_GET['tipo'] : 'todo';
 
 require_once 'noticias/migrateNews.php';
@@ -49,15 +44,11 @@ switch ($tipo) {
         break;
 }
 
-// Cerrar conexiones
 closeConnection($orig_conn);
 closeConnection($dest_conn);
 
 echo "Migración finalizada.";
 
-/**
- * Conexión/desconexión a la base de datos
- */
 function getConnection($host, $user, $pass, $db) {
     $conn = new mysqli($host, $user, $pass, $db);
     if ($conn->connect_error) {
@@ -71,4 +62,13 @@ function closeConnection($conn) {
     if ($conn) {
         $conn->close();
     }
+}
+
+
+/**
+ * Log para debug migracion.log
+ */
+function writeLog($message) {
+    $logFile = __DIR__ . '/migracion.log';
+    file_put_contents($logFile, date('Y-m-d H:i:s') . ' - ' . $message . "\n", FILE_APPEND);
 }
