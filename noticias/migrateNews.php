@@ -3,26 +3,27 @@
  * Migración de Noticias usando WordPress y ACF.
  */
 
-require_once __DIR__ . '/mapFieldsNews.php';
 require_once __DIR__ . '/parseLayoutBlock.php';
 require_once __DIR__ . '/insertBlocksAcf.php';
 
 function migrateNews($origin_conn, $orig_prefix) {
-    // Obtener noticias desde origen
+    // Obtener ids de noticias desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
               AND post_status = 'publish'
+            AND ID = 334885
               LIMIT 10";
 
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {
-        wp_cli_log("No hay noticias para migrar.");
+        echo "No hay noticias para migrar.<br>";
         return;
     }
 
-    wp_cli_log("Se encontraron {$result->num_rows} noticias.");
+    echo "Se encontraron " . $result->num_rows . " noticias<br>";
 
+    // Procesar cada noticia
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
 
@@ -31,25 +32,27 @@ function migrateNews($origin_conn, $orig_prefix) {
         $res_post = $origin_conn->query($sql_post);
 
         if (!$res_post || $res_post->num_rows === 0) {
-            wp_cli_log("Error al obtener datos del post {$orig_id}.");
+            echo "Error al obtener datos del post $orig_id: " . $origin_conn->error . "<br>";
             continue;
         }
 
         $post_data = $res_post->fetch_assoc();
 
         // Crear el post directamente en WordPress
-        $new_post_id = wp_insert_post([
-            'post_title'    => wp_strip_all_tags($post_data['post_title']),
-            'post_excerpt'  => wp_strip_all_tags($post_data['post_excerpt']),
-            'post_content'  => $post_data['post_content'],
-            'post_name'     => $post_data['post_name'],
-            'post_status'   => $post_data['post_status'],
-            'post_type'     => 'news',
-            'post_date'     => $post_data['post_date']
-        ]);
+        $new_post = [
+            'post_title'   => wp_slash($post_data['post_title']),
+            'post_content' => wp_slash($post_data['post_content']),
+            'post_excerpt' => wp_slash($post_data['post_excerpt']),
+            'post_name'    => $post_data['post_name'],
+            'post_status'  => $post_data['post_status'],
+            'post_type'    => 'news',
+            'post_date'    => $post_data['post_date']
+        ];
+        
+        $new_post_id = wp_insert_post($new_post);
 
         if (is_wp_error($new_post_id)) {
-            wp_cli_log("Error al insertar noticia {$orig_id}: " . $new_post_id->get_error_message());
+            echo "Error al insertar la noticia $orig_id: " . $new_post_id->get_error_message() . "<br>";
             continue;
         }
 
@@ -63,16 +66,40 @@ function migrateNews($origin_conn, $orig_prefix) {
         migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix);
 
         // Migrar campos ACF específicos
+        /**
+         * Inserta campos ACF usando update_field().
+         *  - c4_title (titulo_corto)
+         *  - c4_excerpt (descripcion_corta)
+         */
         update_field('c4_title', $metaData['titulo_corto'] ?? '', $new_post_id);
         update_field('c4_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
 
         // Migrar bloques ACF (Flexible Content)
         insertBlocksIntoACF($new_post_id, $post_data, $metaData);
 
-        wp_cli_log("Migrada noticia ID {$orig_id} a nuevo post ID {$new_post_id}.");
     }
 
-    wp_cli_log("Migración de noticias completada.");
+    echo "Migración de noticias completada.<br>";
+}
+
+
+/**
+ * Trae los metadatos desde "{$orig_prefix}postmeta"
+ */
+function getMetaData($post_id, $conn, $orig_prefix) {
+    $metaData = [];
+    $sql = "SELECT meta_key, meta_value 
+            FROM {$orig_prefix}postmeta
+            WHERE post_id = $post_id";
+
+    $result = $conn->query($sql);
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $metaData[$row['meta_key']] = maybe_unserialize($row['meta_value']);
+        }
+    }
+    return $metaData;
 }
 
 /**
@@ -86,6 +113,7 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
         JOIN {$orig_prefix}terms AS t ON tt.term_id = t.term_id
         WHERE tr.object_id = $orig_id
     ";
+    
     $res = $origin_conn->query($sql);
 
     if (!$res || $res->num_rows === 0) return;
@@ -93,13 +121,19 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $terms_by_taxonomy = [];
 
     while ($row = $res->fetch_assoc()) {
+        // Omitir etiqueta específica "hashtag"
         if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
             continue;
         }
-        $terms_by_taxonomy[$row['taxonomy']][] = $row['slug'];
+
+        // Asegurar existencia del término
         ensureTermExists($row['name'], $row['slug'], $row['taxonomy']);
+
+        // Agrupar términos por taxonomía
+        $terms_by_taxonomy[$row['taxonomy']][] = $row['slug'];
     }
 
+    // Asociar términos al nuevo post
     foreach ($terms_by_taxonomy as $taxonomy => $terms) {
         wp_set_object_terms($new_post_id, $terms, $taxonomy);
     }
@@ -111,16 +145,5 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
 function ensureTermExists($name, $slug, $taxonomy) {
     if (!term_exists($slug, $taxonomy)) {
         wp_insert_term($name, $taxonomy, ['slug' => $slug]);
-    }
-}
-
-/**
- * Función simple para log con WP-CLI (si se usa WP-CLI).
- */
-function wp_cli_log($message) {
-    if (defined('WP_CLI') && WP_CLI) {
-        WP_CLI::log($message);
-    } else {
-        error_log($message);
     }
 }

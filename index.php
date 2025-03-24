@@ -4,9 +4,9 @@
  */
 
 // Autoload de WordPress (para poder usar funciones WP y ACF)
-require_once __DIR__ . '/wp-load.php';
+require_once __DIR__ . '/../wp-load.php';
 
-require_once __DIR__ . '/migracion/noticias/migrateNews.php';
+require_once __DIR__ . '/noticias/migrateNews.php';
 
 // Tipo a migrar por parámetro GET (ejemplo: index.php?tipo=noticias)
 $tipo = isset($_GET['tipo']) ? sanitize_text_field($_GET['tipo']) : 'todo';

@@ -2,23 +2,25 @@
 
 require_once __DIR__ . '/parseLayoutBlock.php';
 
-/**
- * Inserta bloques ACF (Flexible Content) usando directamente funciones de ACF.
- */
+
 function insertBlocksIntoACF($post_id, $post_data, $metaData) {
     $flexField = 'noticia_cuerpo';
+    // para reutilizarlo en algunos bloques
     $metaData['__post_title'] = $post_data['post_title'];
 
     $blocks = [];
     $captions = [];
 
-    // 1) Bloques fijos
+    // Bloques fijos
+
+    // 1 Hero-text
     $blocks[] = [
         'acf_fc_layout' => 'hero-text',
         'b12_date' => date('d.m.Y', strtotime($post_data['post_date'])),
         'b12_title' => $post_data['post_title']
     ];
 
+    // 2 texto de introducción
     if (!empty($metaData['noticia_texto_introduccion'])) {
         $blocks[] = [
             'acf_fc_layout' => 'text-multiple-columns',
@@ -27,6 +29,7 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         ];
     }
 
+    // 3 imagen destacada
     if (!empty($metaData['_thumbnail_id'])) {
         $blocks[] = [
             'acf_fc_layout' => 'image',
@@ -35,6 +38,7 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         ];
     }
 
+    // 4 extracto 
     if (!empty($post_data['post_excerpt'])) {
         $blocks[] = [
             'acf_fc_layout' => 'text-multiple-columns',
@@ -43,7 +47,8 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         ];
     }
 
-    // 2) Layouts flexibles
+    // Layouts flexibles
+
     $layouts = maybe_unserialize($metaData[$flexField] ?? []) ?: [];
 
     foreach ($layouts as $i => $layout) {
@@ -62,7 +67,7 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         }
     }
 
-    // 3) Guardar los bloques usando la API de ACF
+    // Guardar los bloques usando la API de ACF
     update_field('c4_blocks', $blocks, $post_id);
 
     // 4) Actualizar leyendas de imágenes (captions)

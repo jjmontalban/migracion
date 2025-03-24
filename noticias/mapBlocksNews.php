@@ -1,5 +1,12 @@
 <?php
 
+
+/**
+ * Funciones para construir los bloques ACF a partir de los layouts originales de noticias.
+ * Cada función retorna un array con la estructura base usando la clave "type", la cual se transformará
+ * a "acf_fc_layout" en parseLayoutBlock().
+ */
+
 /**
  * Extrae el ID de una imagen
  */
@@ -145,7 +152,17 @@ function buildHeadingTextMultipleColumns($i, $metaData, $flexField) {
 
     $title    = $metaData[$titleKey] ?? '';
     $imageId  = extractImageId($metaData[$imageKey] ?? '');
-    $subArr   = @unserialize($metaData[$subField] ?? '') ?: [];
+
+    $subArrData = $metaData[$subField] ?? '';
+    if (is_array($subArrData)) {
+        $subArr = $subArrData;
+    } else {
+        $subArr = maybe_unserialize($subArrData);
+    }
+    if (!is_array($subArr)) {
+        $subArr = [];
+    }
+
 
     // Recoger sublayouts de texto
     $textBlocks = [];

@@ -3,17 +3,11 @@
 require_once __DIR__ . '/mapBlocksNews.php';
 
 /**
- * Convierte un layout ACF del origen en uno o varios bloques ACF destino (estructura adaptada para ACF).
- *
- * @param string  $layout
- * @param int     $i
- * @param array   $metaData
- * @param string  $flexField
- * @param array  &$captions  (referencia) para leyendas de imágenes
- * @return array|array[]|null
+ * Convierte un layout ACF del origen en uno o varios bloques ACF destino
  */
 function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
     switch ($layout) {
+        
         case 'noticia_bloque_texto':
             $block = buildTextMultipleColumns($i, $metaData, $flexField);
             break;
