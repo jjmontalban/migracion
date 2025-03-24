@@ -3,7 +3,7 @@
 require_once __DIR__ . '/mapBlocksNews.php';
 
 /**
- * Convierte un layout ACF del origen en uno o varios bloques ACF destino.
+ * Convierte un layout ACF del origen en uno o varios bloques ACF destino (estructura adaptada para ACF).
  *
  * @param string  $layout
  * @param int     $i
@@ -15,33 +15,58 @@ require_once __DIR__ . '/mapBlocksNews.php';
 function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
     switch ($layout) {
         case 'noticia_bloque_texto':
-            return buildTextMultipleColumns($i, $metaData, $flexField);
+            $block = buildTextMultipleColumns($i, $metaData, $flexField);
+            break;
 
         case 'noticia_bloque_imagen':
-            return buildImageBlock($i, $metaData, $flexField);
+            $block = buildImageBlock($i, $metaData, $flexField);
+            break;
 
         case 'noticia_bloque_video':
-            return buildVideoBlock($i, $metaData, $flexField);
+            $block = buildVideoBlock($i, $metaData, $flexField);
+            break;
 
         case 'bloque_scripts':
-            return buildIframeBlock($i, $metaData, $flexField);
+            $block = buildIframeBlock($i, $metaData, $flexField);
+            break;
 
         case 'noticia_bloque_cita':
-            return buildImageTextSlider($i, $metaData, $flexField);
+            $block = buildImageTextSlider($i, $metaData, $flexField);
+            break;
 
         case 'bloque_especial_fondo_verde':
-            return buildHeadingTextMultipleColumns($i, $metaData, $flexField);
+            $block = buildHeadingTextMultipleColumns($i, $metaData, $flexField);
+            break;
 
         case 'bloque_para_slider':
             $result = buildGallerySlider($i, $metaData, $flexField);
             if ($result && isset($result['acf_block'])) {
-                // Añadir las leyendas
                 $captions = array_merge($captions, $result['captions']);
-                return $result['acf_block'];
+                $block = $result['acf_block'];
+            } else {
+                $block = null;
             }
-            return null;
+            break;
 
         default:
-            return null;
+            $block = null;
+            break;
     }
+
+    if (!$block) {
+        return null;
+    }
+
+    // Asegurar que el bloque o bloques devueltos contengan 'acf_fc_layout'
+    if (isset($block[0])) {
+        foreach ($block as &$b) {
+            $b['acf_fc_layout'] = $b['type'];
+            unset($b['type']);
+        }
+    } else {
+        $block['acf_fc_layout'] = $block['type'];
+        unset($block['type']);
+    }
+
+    return $block;
 }
