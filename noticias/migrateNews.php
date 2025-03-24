@@ -16,7 +16,7 @@ function migrateNews($origin_conn, $dest_conn, $orig_prefix, $dest_prefix) {
             FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
               AND post_status = 'publish'
-              AND ID = 328325
+              AND ID = 334885
               LIMIT 10";
 
     $result = $origin_conn->query($sql);

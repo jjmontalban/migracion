@@ -104,6 +104,36 @@ function buildIframeBlock($i, $metaData, $flexField) {
     ];
 }
 
+/**
+  * Bloque: image-text-slider (testimonios)
+  */
+  function buildImageTextSlider($i, $metaData, $flexField) {
+    $quoteKey = "{$flexField}_{$i}_noticia_cita_texto";
+    $nameKey  = "{$flexField}_{$i}_noticia_cita_autor";
+    $jobKey   = "{$flexField}_{$i}_noticia_cita_autor_rol";
+    $imgKey   = "{$flexField}_{$i}_noticia_cita_autor_imagen";
+
+    $quote = $metaData[$quoteKey] ?? '';
+    $name  = $metaData[$nameKey]  ?? '';
+    $job   = $metaData[$jobKey]   ?? '';
+    $imgId = extractImageId($metaData[$imgKey] ?? '');
+
+    if (empty($quote) && empty($name)) {
+        return null;
+    }
+
+    return [
+        'type'      => 'image-text-slider',
+        'b25_title' => ' ',
+        'b25_items' => [[
+            'b25i_quote' => $quote,
+            'b25i_name'  => $name,
+            'b25i_job'   => $job,
+            'b25i_image' => $imgId
+        ]]
+    ];
+}
+
 
 /**
  * Bloque especial: heading + N x text-multiple-columns
