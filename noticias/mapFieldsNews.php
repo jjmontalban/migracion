@@ -112,7 +112,7 @@ function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn,
                     $existing = $check_res->fetch_assoc();
                     $dest_term_id = $existing['term_id'];
                 } else {
-                    // Crear término
+                    // si no crear termino
                     $dest_conn->query("
                         INSERT INTO {$dest_prefix}terms (name, slug, term_group)
                         VALUES ('$term_name', '$term_slug', 0)
@@ -125,7 +125,7 @@ function migrateNewsTaxonomies($orig_id, $new_post_id, $origin_conn, $dest_conn,
                     ");
                 }
 
-                // Vincular término al post
+                // Vincular termino al post
                 $tt_sql = "
                     SELECT term_taxonomy_id
                     FROM {$dest_prefix}term_taxonomy

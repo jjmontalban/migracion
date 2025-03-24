@@ -1,8 +1,4 @@
 <?php
-// ===================================================
-// CONFIGURACIÓN Y EJECUCIÓN PRINCIPAL
-// ===================================================
-
 // Configuración de las bases de datos
 $host = 'localhost';
 $user = 'root';
@@ -24,7 +20,6 @@ require_once 'noticias/migrateNews.php';
 
 switch ($tipo) {
     case 'noticias':
-        flush(); ob_flush();
         migrateNews($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
         break;
 
@@ -66,7 +61,7 @@ function closeConnection($conn) {
 
 
 /**
- * Log para debug migracion.log
+ * debug
  */
 function writeLog($message) {
     $logFile = __DIR__ . '/migracion.log';

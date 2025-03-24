@@ -4,15 +4,8 @@ require_once __DIR__ . '/mapBlocksNews.php';
 
 /**
  * Convierte un layout ACF del origen en uno o varios bloques ACF destino.
- *
- * @param string  $layout
- * @param int     $i
- * @param array   $metaData
- * @param string  $flexField
- * @param array  &$captions  (referencia) para leyendas de imágenes
- * @return array|array[]|null
  */
-function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
+function parseLayoutBlock($layout, $i, $metaData, $flexField, $conn, $dest_prefix, &$captions = []) {
     switch ($layout) {
         case 'noticia_bloque_texto':
             return buildTextMultipleColumns($i, $metaData, $flexField);
@@ -30,12 +23,12 @@ function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
             return buildImageTextSlider($i, $metaData, $flexField);
 
         case 'bloque_especial_fondo_verde':
-            return buildHeadingTextMultipleColumns($i, $metaData, $flexField);
+            return buildHeadingTextMultipleColumns($i, $metaData, $flexField, $conn, $dest_prefix);
 
         case 'bloque_para_slider':
             $result = buildGallerySlider($i, $metaData, $flexField);
             if ($result && isset($result['acf_block'])) {
-                // Añadir las leyendas
+                // leyenda de imagenes
                 $captions = array_merge($captions, $result['captions']);
                 return $result['acf_block'];
             }
