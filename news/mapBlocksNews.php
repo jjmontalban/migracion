@@ -1,5 +1,5 @@
 <?php
-
+namespace migracion\news;
 
 /**
  * Funciones para construir los bloques ACF a partir de los layouts originales de noticias.
@@ -191,7 +191,10 @@ function buildHeadingTextMultipleColumns($i, $metaData, $flexField, $post_id, $o
     ]];
     foreach ($textBlocks as $idx => $text) {
         if ($idx === 0 && $new_img_id > 0) {
-            $text .= "\n<p><img src='[ID:$new_img_id]' alt='' /></p>";
+            $img_url = wp_get_attachment_url($new_img_id);
+            if ($img_url) {
+                $text .= "\n<p><img src='" . esc_url($img_url) . "' alt='' /></p>";
+            }
         }
         $blocks[] = [
             'type'        => 'text-multiple-columns',

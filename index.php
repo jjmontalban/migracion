@@ -6,9 +6,13 @@
 // Autoload de WordPress (para poder usar funciones WP y ACF)
 require_once __DIR__ . '/../wp-load.php';
 
-require_once __DIR__ . '/noticias/migrateNews.php';
+require_once __DIR__ . '/news/migrateNews.php';
+require_once __DIR__ . '/conferences/migrateConferences.php';
 
-// Tipo a migrar por parámetro GET (ejemplo: index.php?tipo=noticias)
+use function migracion\news\migrateNews;
+use function migracion\conferences\migrateConferences;
+
+// Tipo a migrar por parámetro GET (ejemplo: index.php?tipo=news)
 $tipo = isset($_GET['tipo']) ? sanitize_text_field($_GET['tipo']) : 'todo';
 
 // Conexión remota a DB origen
@@ -20,22 +24,22 @@ $origin_conn->set_charset("utf8mb4");
 $orig_prefix = 'wi_';
 
 switch ($tipo) {
-    case 'noticias':
+    case 'news':
         migrateNews($origin_conn, $orig_prefix);
         break;
 
-    case 'conferencias':
-        echo "Migración de conferencias aún no implementada.";
+    case 'conferences':
+        migrateConferences($origin_conn, $orig_prefix);
         break;
 
-    case 'exposiciones':
+    case 'exhibitions':
         echo "Migración de exposiciones aún no implementada.";
         break;
 
     case 'todo':
     default:
         migrateNews($origin_conn, $orig_prefix);
-        echo "Conferencias y exposiciones aún no implementadas.";
+        migrateConferences($origin_conn, $orig_prefix);
         break;
 }
 

@@ -1,6 +1,6 @@
 <?php
+namespace migracion\news;
 require_once __DIR__ . '/parseLayoutBlock.php';
-
 /**
  * Inserta los bloques ACF (campo flexible "noticia_cuerpo") en el post destino.
  *
@@ -39,20 +39,17 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData, $origin_conn, $ori
 
     // 3. Bloque fijo: imagen destacada
     if (!empty($metaData['_thumbnail_id'])) {
-        error_log("INICIO migración imagen destacada. _thumbnail_id origen: " . print_r($metaData['_thumbnail_id'], true));
         $old_thumb_id  = $metaData['_thumbnail_id'];
         $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
-        error_log("URL de imagen obtenida: " . print_r($old_image_url, true));
         
         if ($old_image_url) {
             $new_thumb_id = migrate_image($old_image_url, $post_id);
-            error_log("Nuevo ID de imagen: " . print_r($new_thumb_id, true));
             if ($new_thumb_id) {
                 update_post_meta($post_id, '_thumbnail_id', $new_thumb_id);
                 $metaData['_thumbnail_id'] = $new_thumb_id;
+                
             }
         }
-        error_log("Valor final de _thumbnail_id en metaData: " . print_r($metaData['_thumbnail_id'], true));
         
         $blocks[] = [
             'acf_fc_layout' => 'image',
@@ -87,7 +84,7 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData, $origin_conn, $ori
         }
     }
 
-    // Guardar los bloques usando la API de ACF (en este ejemplo el campo se llama 'c4_blocks')
+    // Guardar los bloques usando la API de ACF (campo'c4_blocks')
     update_field('c4_blocks', $blocks, $post_id);
 
     // 6. Actualizar leyendas de imágenes (captions)

@@ -1,7 +1,7 @@
 <?php
+namespace migracion\conferences;
 
-require_once __DIR__ . '/mapBlocksNews.php';
-
+require_once __DIR__ . '/mapBlocksConferences.php';
 /**
  * Convierte un layout ACF del origen en uno o varios bloques ACF destino
  */

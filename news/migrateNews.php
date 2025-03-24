@@ -1,4 +1,5 @@
 <?php
+ namespace migracion\news;
 /**
  * Migración de Noticias usando WordPress y ACF.
  */
@@ -11,7 +12,7 @@ function migrateNews($origin_conn, $orig_prefix) {
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
               AND post_status = 'publish'
-              AND ID = 334329
+              AND ID IN (257130, 256983, 257066)
               LIMIT 10";
 
     $result = $origin_conn->query($sql);
@@ -74,8 +75,27 @@ function migrateNews($origin_conn, $orig_prefix) {
         update_field('c4_title', $metaData['titulo_corto'] ?? '', $new_post_id);
         update_field('c4_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
 
+        if (!empty($metaData['_thumbnail_id'])) {
+            $old_thumb_id  = $metaData['_thumbnail_id'];
+            $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
+            
+            if ($old_image_url) {
+                $new_thumb_id = migrate_image($old_image_url, $post_id);
+                if ($new_thumb_id) {
+                    update_post_meta($post_id, '_thumbnail_id', $new_thumb_id);
+                    $metaData['_thumbnail_id'] = $new_thumb_id;
+                    
+                }
+            }
+            
+            update_field('c4_image_list', $metaData['_thumbnail_id'], $new_post_id);
+        }
+
+            
+            
         // Migrar bloques ACF (Flexible Content)
         insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
+            
     }
 
     echo "Migración de noticias completada.<br>";
