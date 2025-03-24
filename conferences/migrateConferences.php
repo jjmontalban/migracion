@@ -102,6 +102,7 @@ function getMetaData($post_id, $conn, $orig_prefix) {
     return $metaData;
 }
 
+
 /**
  * Migrar categorías y etiquetas desde origen
  */
@@ -121,23 +122,30 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $terms_by_taxonomy = [];
 
     while ($row = $res->fetch_assoc()) {
-        // Omitir etiqueta específica "hashtag"
+        // Omito etiqueta específica "hashtag"
         if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
             continue;
         }
 
-        // Asegurar existencia del término
-        ensureTermExists($row['name'], $row['slug'], $row['taxonomy']);
+        // Si el término es de origen 'categorias_conferencias', lo mapeo a 'conferences-category' en el destino
+        $dest_taxonomy = ($row['taxonomy'] === 'categorias_conferencias') ? 'conferences-category' : $row['taxonomy'];
 
-        // Agrupar términos por taxonomía
-        $terms_by_taxonomy[$row['taxonomy']][] = $row['slug'];
+        // Aseguro que el término exista en el destino
+        ensureTermExists($row['name'], $row['slug'], $dest_taxonomy);
+
+        // Agrupo los términos por la taxonomía destino
+        $terms_by_taxonomy[$dest_taxonomy][] = $row['slug'];
     }
 
-    // Asociar términos al nuevo post
+    // Asocio los términos al post migrado usando la taxonomía destino
     foreach ($terms_by_taxonomy as $taxonomy => $terms) {
         wp_set_object_terms($new_post_id, $terms, $taxonomy);
     }
 }
+
+
+
+
 
 /**
  * Crea el término si no existe.
