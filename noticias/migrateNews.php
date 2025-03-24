@@ -11,7 +11,7 @@ function migrateNews($origin_conn, $orig_prefix) {
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
               AND post_status = 'publish'
-            AND ID = 334885
+              AND ID = 334329
               LIMIT 10";
 
     $result = $origin_conn->query($sql);
@@ -75,8 +75,7 @@ function migrateNews($origin_conn, $orig_prefix) {
         update_field('c4_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
 
         // Migrar bloques ACF (Flexible Content)
-        insertBlocksIntoACF($new_post_id, $post_data, $metaData);
-
+        insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
     }
 
     echo "Migración de noticias completada.<br>";
@@ -146,4 +145,49 @@ function ensureTermExists($name, $slug, $taxonomy) {
     if (!term_exists($slug, $taxonomy)) {
         wp_insert_term($name, $taxonomy, ['slug' => $slug]);
     }
+}
+
+
+/**
+ * Obtiene la URL de la imagen en el origen a partir de su ID.
+ */
+function get_old_image_url($old_image_id, $conn, $orig_prefix) {
+    $sql = "SELECT guid FROM {$orig_prefix}posts WHERE ID = $old_image_id";
+    $result = $conn->query($sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        return $row['guid'];
+    }
+    return false;
+}
+
+
+
+/**
+ * Migra una imagen desde la URL del origen al WordPress de destino.
+ *
+ * @param string $image_url URL de la imagen en el origen.
+ * @param int    $post_id   ID del post al que se asociará la imagen.
+ * @return int|false        ID del attachment migrado o false en caso de error.
+ */
+function migrate_image($image_url, $post_id) {
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+
+    $tmp = download_url($image_url);
+    if (is_wp_error($tmp)) {
+        return false;
+    }
+
+    $file_array = [
+        'name'     => basename($image_url),
+        'tmp_name' => $tmp
+    ];
+
+    $attachment_id = media_handle_sideload($file_array, $post_id);
+    if (is_wp_error($attachment_id)) {
+        @unlink($file_array['tmp_name']);
+        return false;
+    }
+    return $attachment_id;
 }

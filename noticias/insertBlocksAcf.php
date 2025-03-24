@@ -1,26 +1,34 @@
 <?php
-
 require_once __DIR__ . '/parseLayoutBlock.php';
 
-
-function insertBlocksIntoACF($post_id, $post_data, $metaData) {
+/**
+ * Inserta los bloques ACF (campo flexible "noticia_cuerpo") en el post destino.
+ *
+ * Se mantienen los bloques fijos (hero-text, introducción, extracto) y se integra el proceso
+ * de migración para la imagen destacada. Para migrar la imagen se obtiene la URL del post origen,
+ * se migra la imagen y se actualiza el meta _thumbnail_id con el nuevo ID.
+ *
+ * @param int    $post_id     ID del post destino en WordPress.
+ * @param array  $post_data   Datos del post extraídos del origen.
+ * @param array  $metaData    Metadatos del post origen.
+ * @param object $origin_conn Conexión a la BD origen.
+ * @param string $orig_prefix Prefijo de las tablas en la BD origen.
+ */
+function insertBlocksIntoACF($post_id, $post_data, $metaData, $origin_conn, $orig_prefix) {
     $flexField = 'noticia_cuerpo';
-    // para reutilizarlo en algunos bloques
+    // Reutilizar el título en algunos bloques
     $metaData['__post_title'] = $post_data['post_title'];
-
+    $captions = []; // Inicializar antes de procesar los layouts
     $blocks = [];
-    $captions = [];
 
-    // Bloques fijos
-
-    // 1 Hero-text
+    // 1. Bloque fijo: hero-text
     $blocks[] = [
         'acf_fc_layout' => 'hero-text',
-        'b12_date' => date('d.m.Y', strtotime($post_data['post_date'])),
-        'b12_title' => $post_data['post_title']
+        'b12_date'      => date('d.m.Y', strtotime($post_data['post_date'])),
+        'b12_title'     => $post_data['post_title']
     ];
 
-    // 2 texto de introducción
+    // 2. Bloque fijo: texto de introducción
     if (!empty($metaData['noticia_texto_introduccion'])) {
         $blocks[] = [
             'acf_fc_layout' => 'text-multiple-columns',
@@ -29,8 +37,23 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         ];
     }
 
-    // 3 imagen destacada
+    // 3. Bloque fijo: imagen destacada
     if (!empty($metaData['_thumbnail_id'])) {
+        error_log("INICIO migración imagen destacada. _thumbnail_id origen: " . print_r($metaData['_thumbnail_id'], true));
+        $old_thumb_id  = $metaData['_thumbnail_id'];
+        $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
+        error_log("URL de imagen obtenida: " . print_r($old_image_url, true));
+        
+        if ($old_image_url) {
+            $new_thumb_id = migrate_image($old_image_url, $post_id);
+            error_log("Nuevo ID de imagen: " . print_r($new_thumb_id, true));
+            if ($new_thumb_id) {
+                update_post_meta($post_id, '_thumbnail_id', $new_thumb_id);
+                $metaData['_thumbnail_id'] = $new_thumb_id;
+            }
+        }
+        error_log("Valor final de _thumbnail_id en metaData: " . print_r($metaData['_thumbnail_id'], true));
+        
         $blocks[] = [
             'acf_fc_layout' => 'image',
             'b20_title'     => $post_data['post_title'],
@@ -38,7 +61,7 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         ];
     }
 
-    // 4 extracto 
+    // 4. Bloque fijo: extracto
     if (!empty($post_data['post_excerpt'])) {
         $blocks[] = [
             'acf_fc_layout' => 'text-multiple-columns',
@@ -47,15 +70,12 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         ];
     }
 
-    // Layouts flexibles
-
+    // 5. Procesar layouts flexibles definidos en el campo original
     $layouts = maybe_unserialize($metaData[$flexField] ?? []) ?: [];
-
     foreach ($layouts as $i => $layout) {
-        $result = parseLayoutBlock($layout, $i, $metaData, $flexField, $captions);
-
+        $result = parseLayoutBlock($layout, $i, $metaData, $flexField, $captions, $post_id, $origin_conn, $orig_prefix);
         if ($result) {
-            if (isset($result[0])) { // Múltiples bloques
+                if (isset($result[0])) { // Múltiples bloques
                 foreach ($result as $block) {
                     if ($block) {
                         $blocks[] = $block;
@@ -67,19 +87,20 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData) {
         }
     }
 
-    // Guardar los bloques usando la API de ACF
+    // Guardar los bloques usando la API de ACF (en este ejemplo el campo se llama 'c4_blocks')
     update_field('c4_blocks', $blocks, $post_id);
 
-    // 4) Actualizar leyendas de imágenes (captions)
-    foreach ($captions as $c) {
-        $img_id  = (int)$c['id'];
-        $caption = sanitize_text_field($c['caption']);
-
-        if ($img_id > 0 && !empty($caption)) {
-            wp_update_post([
-                'ID'           => $img_id,
-                'post_excerpt' => $caption
-            ]);
+    // 6. Actualizar leyendas de imágenes (captions)
+    if (!empty($captions) && is_array($captions)) {
+        foreach ($captions as $c) {
+            $img_id  = (int)$c['id'];
+            $caption = sanitize_text_field($c['caption']);
+            if ($img_id > 0 && !empty($caption)) {
+                wp_update_post([
+                    'ID'           => $img_id,
+                    'post_excerpt' => $caption
+                ]);
+            }
         }
     }
 }

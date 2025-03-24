@@ -5,7 +5,7 @@ require_once __DIR__ . '/mapBlocksNews.php';
 /**
  * Convierte un layout ACF del origen en uno o varios bloques ACF destino
  */
-function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
+function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions, $post_id, $origin_conn, $orig_prefix) {
     switch ($layout) {
         
         case 'noticia_bloque_texto':
@@ -13,7 +13,7 @@ function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
             break;
 
         case 'noticia_bloque_imagen':
-            $block = buildImageBlock($i, $metaData, $flexField);
+            $block = buildImageBlock($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix);
             break;
 
         case 'noticia_bloque_video':
@@ -25,15 +25,15 @@ function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
             break;
 
         case 'noticia_bloque_cita':
-            $block = buildImageTextSlider($i, $metaData, $flexField);
+            $block = buildImageTextSlider($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix);
             break;
 
         case 'bloque_especial_fondo_verde':
-            $block = buildHeadingTextMultipleColumns($i, $metaData, $flexField);
+            $block = buildHeadingTextMultipleColumns($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix);
             break;
 
         case 'bloque_para_slider':
-            $result = buildGallerySlider($i, $metaData, $flexField);
+            $result = buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix);
             if ($result && isset($result['acf_block'])) {
                 $captions = array_merge($captions, $result['captions']);
                 $block = $result['acf_block'];
@@ -41,6 +41,7 @@ function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions = []) {
                 $block = null;
             }
             break;
+            
 
         default:
             $block = null;

@@ -12,7 +12,7 @@ require_once __DIR__ . '/noticias/migrateNews.php';
 $tipo = isset($_GET['tipo']) ? sanitize_text_field($_GET['tipo']) : 'todo';
 
 // Conexión remota a DB origen
-$origin_conn = new mysqli('localhost', 'root', '', 'wi');
+$origin_conn = new mysqli('localhost', 'root', '', 'backup_pro');
 if ($origin_conn->connect_error) {
     die("Error de conexión a la base de datos origen: " . $origin_conn->connect_error);
 }
