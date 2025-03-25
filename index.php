@@ -7,9 +7,11 @@ require_once __DIR__ . '/../wp-load.php';
 
 require_once __DIR__ . '/news/migrateNews.php';
 require_once __DIR__ . '/conferences/migrateConferences.php';
+require_once __DIR__ . '/exhibitions/migrateExhibitions.php';
 
 use function migration\news\migrateNews;
 use function migration\conferences\migrateConferences;
+use function migration\exhibitions\migrateExhibitions;
 
 // Tipo a migrar por parámetro GET (ejemplo: index.php?type=news)
 $type = isset($_GET['type']) ? sanitize_text_field($_GET['type']) : 'all';
@@ -32,13 +34,14 @@ switch ($type) {
         break;
 
     case 'exhibitions':
-        echo "TODO";
+        migrateExhibitions($origin_conn, $orig_prefix);
         break;
-
+    
     case 'all':
-    default:
+        default:
         migrateNews($origin_conn, $orig_prefix);
         migrateConferences($origin_conn, $orig_prefix);
+        migrateExhibitions($origin_conn, $orig_prefix);
         break;
 }
 

@@ -1,7 +1,7 @@
 <?php
- namespace migration\conferences;
+namespace migration\exhibitions;
 /**
- * Migración de Conferencias usando WordPress y ACF.
+ * Migración de Exposiciones usando WordPress y ACF.
  */
 
 require_once __DIR__ . '/parseLayoutBlock.php';
@@ -11,23 +11,23 @@ require_once ABSPATH . 'wp-admin/includes/image.php';
 require_once ABSPATH . 'wp-admin/includes/file.php';
 require_once ABSPATH . 'wp-admin/includes/media.php';
 
-function migrateConferences($origin_conn, $orig_prefix) {
+function migrateExhibitions($origin_conn, $orig_prefix) {
     $sql = "SELECT ID FROM {$orig_prefix}posts
-            WHERE post_type = 'conferencias'
-              AND post_status = 'publish' LIMIT 50";
-    /* Conferencias con todos los bloques AND ID IN (219294, 247224, 231169, 238886, 243958, 242758, 242001, 228899) */
+            WHERE post_type = 'exposiciones'
+              AND post_status = 'publish' AND ID IN ( 213366,213371 , 213380, 213386, 213304)";
+
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {
-        echo "No hay cof para migrar.<br>";
+        echo "No hay exposiciones para migrar.<br>";
         return;
     }
-
-    echo "Se encontraron " . $result->num_rows . " conf<br>";
+    echo "Se encontraron " . $result->num_rows . " exposiciones<br>";
 
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
 
+        // Obtener datos del post origen
         $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
         $res_post = $origin_conn->query($sql_post);
 
@@ -35,7 +35,6 @@ function migrateConferences($origin_conn, $orig_prefix) {
             echo "Error al obtener datos del post $orig_id: " . $origin_conn->error . "<br>";
             continue;
         }
-
         $post_data = $res_post->fetch_assoc();
 
         $new_post = [
@@ -44,14 +43,14 @@ function migrateConferences($origin_conn, $orig_prefix) {
             'post_excerpt' => wp_slash($post_data['post_excerpt']),
             'post_name'    => $post_data['post_name'],
             'post_status'  => $post_data['post_status'],
-            'post_type'    => 'conferences',
+            'post_type'    => 'exhibitions',
             'post_date'    => $post_data['post_date']
         ];
-        
+
         $new_post_id = wp_insert_post($new_post);
 
         if (is_wp_error($new_post_id)) {
-            echo "Error al insertar el post $orig_id: " . $new_post_id->get_error_message() . "<br>";
+            echo "Error al insertar la exposición $orig_id: " . $new_post_id->get_error_message() . "<br>";
             continue;
         }
 
@@ -61,25 +60,26 @@ function migrateConferences($origin_conn, $orig_prefix) {
             update_post_meta($new_post_id, $key, maybe_unserialize($value));
         }
 
-        // Migrar taxonomías (categorías y etiquetas)
+        // Migrar taxonomías: de 'categorias_exposiciones' a 'exhibitions-category'
         migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix);
 
         // Migrar campos ACF específicos
-        /**
-         * Inserta campos ACF usando update_field().
-         *  - c1_title (titulo_corto)
-         *  - c1_excerpt (descripcion_corta)
-         *  - c1_date_start (noticia_fecha)
-         *  - c1_image_list (imagen_destacada)
-         */
-        update_field('c1_title', $metaData['titulo_corto'] ?? '', $new_post_id);
-        update_field('c1_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
-        update_field('c1_date_start', $metaData['noticia_fecha'] ?? '', $new_post_id);
+        //  c3_title -> titulo_corto
+        //  c3_excerpt -> descripcion_corta
+        //  c3_date_start -> noticia_fecha
+        // c3_image_list -> imagen_destacada
+        $fechas = getDateStartEnd($metaData, $new_post_id);
+
+        update_field('c3_title', $metaData['titulo_corto'] ?? '', $new_post_id);
+        update_field('c3_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
+        update_field('c3_date_start', $fechas['start'] ?? '', $new_post_id);
+        update_field('c3_date_end', $fechas['end'] ?? '', $new_post_id);
+        
+        getDateStartEnd($metaData);
 
         if (!empty($metaData['_thumbnail_id'])) {
             $old_thumb_id  = $metaData['_thumbnail_id'];
             $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
-            
             if ($old_image_url) {
                 $new_thumb_id = migrate_image($old_image_url, $new_post_id);
                 if ($new_thumb_id) {
@@ -87,29 +87,24 @@ function migrateConferences($origin_conn, $orig_prefix) {
                     $metaData['_thumbnail_id'] = $new_thumb_id;
                 }
             }
-            
-            update_field('c1_image_list', $metaData['_thumbnail_id'], $new_post_id);
+            update_field('c3_image_list', $metaData['_thumbnail_id'], $new_post_id);
         }
 
-        // Migrar bloques ACF (Flexible Content)
+        // Migrar bloques ACF (Flexible Content) desde el campo 'c3_blocks'
         insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
     }
-
-    echo "Migración de conferencias completada.<br>";
+    echo "Migración de exposiciones completada.<br>";
 }
 
-
 /**
- * Trae los metadatos desde "{$orig_prefix}postmeta"
+ * Obtener metadatos desde "{$orig_prefix}postmeta"
  */
 function getMetaData($post_id, $conn, $orig_prefix) {
     $metaData = [];
     $sql = "SELECT meta_key, meta_value 
             FROM {$orig_prefix}postmeta
             WHERE post_id = $post_id";
-
     $result = $conn->query($sql);
-
     if ($result) {
         while ($row = $result->fetch_assoc()) {
             $metaData[$row['meta_key']] = maybe_unserialize($row['meta_value']);
@@ -118,10 +113,8 @@ function getMetaData($post_id, $conn, $orig_prefix) {
     return $metaData;
 }
 
-
 /**
- * Migrar la taxonomía de conferencias desde el origen a la del destino.
- * Solo se mapea 'categorias_conferencias' (origen) a 'conferences-category' (destino).
+ * Migrar taxonomías: de 'categorias_exposiciones' a 'exhibitions-category'
  */
 function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $sql = "
@@ -130,34 +123,23 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
         JOIN {$orig_prefix}term_taxonomy AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
         JOIN {$orig_prefix}terms AS t ON tt.term_id = t.term_id
         WHERE tr.object_id = $orig_id 
-        AND tt.taxonomy = 'categorias_conferencias'
+        AND tt.taxonomy = 'categorias_exposiciones'
     ";
-    
     $res = $origin_conn->query($sql);
     if (!$res || $res->num_rows === 0) return;
-
-    $terms_by_taxonomy = [];
-
+    $terms = [];
     while ($row = $res->fetch_assoc()) {
-        // Omitir "hashtag"
-        if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
-            continue;
-        }
-
-        $dest_taxonomy = ($row['taxonomy'] === 'categorias_conferencias') ? 'conferences-category' : $row['taxonomy'];
-
+        $dest_taxonomy = 'exhibitions-category';
         ensureTermExists($row['name'], $row['slug'], $dest_taxonomy);
-
-        $terms_by_taxonomy[$dest_taxonomy][] = $row['slug'];
+        $terms[] = $row['slug'];
     }
-
-    foreach ($terms_by_taxonomy as $taxonomy => $terms) {
-        wp_set_object_terms($new_post_id, $terms, $taxonomy);
+    if (!empty($terms)) {
+        wp_set_object_terms($new_post_id, $terms, 'exhibitions-category');
     }
 }
 
 /**
- * Crea el término si no existe en la taxonomía destino.
+ * Asegurar que el término existe en la taxonomía destino
  */
 function ensureTermExists($name, $slug, $taxonomy) {
     if (!term_exists($slug, $taxonomy)) {
