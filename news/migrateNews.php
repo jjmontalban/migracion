@@ -1,0 +1,212 @@
+<?php
+ namespace migracion\news;
+/**
+ * Migración de Noticias usando WordPress y ACF.
+ */
+
+require_once __DIR__ . '/parseLayoutBlock.php';
+require_once __DIR__ . '/insertBlocksAcf.php';
+
+function migrateNews($origin_conn, $orig_prefix) {
+    // Obtener ids de noticias desde origen
+    $sql = "SELECT ID FROM {$orig_prefix}posts
+            WHERE post_type = 'noticias'
+              AND post_status = 'publish' LIMIT 50";
+                /* AND ID IN (257130, 256983, 257066) */
+    $result = $origin_conn->query($sql);
+
+    if (!$result || $result->num_rows === 0) {
+        echo "No hay noticias para migrar.<br>";
+        return;
+    }
+
+    echo "Se encontraron " . $result->num_rows . " noticias<br>";
+
+    // Procesar cada noticia
+    while ($row = $result->fetch_assoc()) {
+        $orig_id = (int)$row['ID'];
+
+        // Obtener datos del post origen
+        $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
+        $res_post = $origin_conn->query($sql_post);
+
+        if (!$res_post || $res_post->num_rows === 0) {
+            echo "Error al obtener datos del post $orig_id: " . $origin_conn->error . "<br>";
+            continue;
+        }
+
+        $post_data = $res_post->fetch_assoc();
+
+        // Crear el post directamente en WordPress
+        $new_post = [
+            'post_title'   => wp_slash($post_data['post_title']),
+            'post_content' => wp_slash($post_data['post_content']),
+            'post_excerpt' => wp_slash($post_data['post_excerpt']),
+            'post_name'    => $post_data['post_name'],
+            'post_status'  => $post_data['post_status'],
+            'post_type'    => 'news',
+            'post_date'    => $post_data['post_date']
+        ];
+        
+        $new_post_id = wp_insert_post($new_post);
+
+        if (is_wp_error($new_post_id)) {
+            echo "Error al insertar la noticia $orig_id: " . $new_post_id->get_error_message() . "<br>";
+            continue;
+        }
+
+        // Migrar metadatos
+        $metaData = getMetaData($orig_id, $origin_conn, $orig_prefix);
+        foreach ($metaData as $key => $value) {
+            update_post_meta($new_post_id, $key, maybe_unserialize($value));
+        }
+
+        // Migrar taxonomías (categorías y etiquetas)
+        migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix);
+
+        // Migrar campos ACF específicos
+        /**
+         * Inserta campos ACF usando update_field().
+         *  - c4_title (titulo_corto)
+         *  - c4_excerpt (descripcion_corta)
+         *  - c4_image_list (imagen_destacada)
+         */
+        update_field('c4_title', $metaData['titulo_corto'] ?? '', $new_post_id);
+        update_field('c4_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
+
+        if (!empty($metaData['_thumbnail_id'])) {
+            $old_thumb_id  = $metaData['_thumbnail_id'];
+            $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
+            
+            if ($old_image_url) {
+                // Se reemplaza $post_id por $new_post_id
+                $new_thumb_id = migrate_image($old_image_url, $new_post_id);
+                if ($new_thumb_id) {
+                    update_post_meta($new_post_id, '_thumbnail_id', $new_thumb_id);
+                    $metaData['_thumbnail_id'] = $new_thumb_id;
+                }
+            }
+            
+            update_field('c4_image_list', $metaData['_thumbnail_id'], $new_post_id);
+        }
+
+            
+            
+        // Migrar bloques ACF (Flexible Content)
+        insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
+            
+    }
+
+    echo "Migración de noticias completada.<br>";
+}
+
+
+/**
+ * Trae los metadatos desde "{$orig_prefix}postmeta"
+ */
+function getMetaData($post_id, $conn, $orig_prefix) {
+    $metaData = [];
+    $sql = "SELECT meta_key, meta_value 
+            FROM {$orig_prefix}postmeta
+            WHERE post_id = $post_id";
+
+    $result = $conn->query($sql);
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $metaData[$row['meta_key']] = maybe_unserialize($row['meta_value']);
+        }
+    }
+    return $metaData;
+}
+
+/**
+ * Migrar categorías y etiquetas desde origen
+ */
+function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
+    $sql = "
+        SELECT tt.taxonomy, t.name, t.slug
+        FROM {$orig_prefix}term_relationships AS tr
+        JOIN {$orig_prefix}term_taxonomy AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+        JOIN {$orig_prefix}terms AS t ON tt.term_id = t.term_id
+        WHERE tr.object_id = $orig_id
+    ";
+    
+    $res = $origin_conn->query($sql);
+
+    if (!$res || $res->num_rows === 0) return;
+
+    $terms_by_taxonomy = [];
+
+    while ($row = $res->fetch_assoc()) {
+        // Omitir etiqueta específica "hashtag"
+        if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
+            continue;
+        }
+
+        // Asegurar existencia del término
+        ensureTermExists($row['name'], $row['slug'], $row['taxonomy']);
+
+        // Agrupar términos por taxonomía
+        $terms_by_taxonomy[$row['taxonomy']][] = $row['slug'];
+    }
+
+    // Asociar términos al nuevo post
+    foreach ($terms_by_taxonomy as $taxonomy => $terms) {
+        wp_set_object_terms($new_post_id, $terms, $taxonomy);
+    }
+}
+
+/**
+ * Crea el término si no existe.
+ */
+function ensureTermExists($name, $slug, $taxonomy) {
+    if (!term_exists($slug, $taxonomy)) {
+        wp_insert_term($name, $taxonomy, ['slug' => $slug]);
+    }
+}
+
+
+/**
+ * Obtiene la URL de la imagen en el origen a partir de su ID.
+ */
+function get_old_image_url($old_image_id, $conn, $orig_prefix) {
+    $sql = "SELECT guid FROM {$orig_prefix}posts WHERE ID = $old_image_id";
+    $result = $conn->query($sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        return $row['guid'];
+    }
+    return false;
+}
+
+
+
+/**
+ * Migra una imagen desde la URL del origen al WordPress de destino.
+ *
+ * @param string $image_url URL de la imagen en el origen.
+ * @param int    $post_id   ID del post al que se asociará la imagen.
+ * @return int|false        ID del attachment migrado o false en caso de error.
+ */
+function migrate_image($image_url, $post_id) {
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+
+    $tmp = download_url($image_url);
+    if (is_wp_error($tmp)) {
+        return false;
+    }
+
+    $file_array = [
+        'name'     => basename($image_url),
+        'tmp_name' => $tmp
+    ];
+
+    $attachment_id = media_handle_sideload($file_array, $post_id);
+    if (is_wp_error($attachment_id)) {
+        @unlink($file_array['tmp_name']);
+        return false;
+    }
+    return $attachment_id;
+}

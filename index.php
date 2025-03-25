@@ -1,69 +1,48 @@
 <?php
-// Configuración de las bases de datos
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$db_orig = 'wi';
-$db_dest = 'web-wi';
+/**
+ * Script de migración de contenidos directamente integrado en WordPress
+ */
 
+// Autoload de WordPress (para poder usar funciones WP y ACF)
+require_once __DIR__ . '/../wp-load.php';
+
+require_once __DIR__ . '/news/migrateNews.php';
+require_once __DIR__ . '/conferences/migrateConferences.php';
+
+use function migracion\news\migrateNews;
+use function migracion\conferences\migrateConferences;
+
+// Tipo a migrar por parámetro GET (ejemplo: index.php?tipo=news)
+$tipo = isset($_GET['tipo']) ? sanitize_text_field($_GET['tipo']) : 'todo';
+
+// Conexión remota a DB origen
+$origin_conn = new mysqli('localhost', 'root', '', 'backup_pro');
+if ($origin_conn->connect_error) {
+    die("Error de conexión a la base de datos origen: " . $origin_conn->connect_error);
+}
+$origin_conn->set_charset("utf8mb4");
 $orig_prefix = 'wi_';
-$dest_prefix = 'ftwi_';
-
-$orig_conn = getConnection($host, $user, $pass, $db_orig);
-$dest_conn = getConnection($host, $user, $pass, $db_dest);
-
-$tipo = isset($_GET['tipo']) ? $_GET['tipo'] : 'todo';
-
-require_once 'noticias/migrateNews.php';
-//require_once 'conferencias/migrateConferences.php';
-//require_once 'exposiciones/migrateExhibitions.php';
 
 switch ($tipo) {
-    case 'noticias':
-        migrateNews($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+    case 'news':
+        migrateNews($origin_conn, $orig_prefix);
         break;
 
-    case 'conferencias':
-        //migrateConferences($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+    case 'conferences':
+        migrateConferences($origin_conn, $orig_prefix);
         break;
 
-    case 'exposiciones':
-        //migrateExhibitions($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+    case 'exhibitions':
+        echo "Migración de exposiciones aún no implementada.";
         break;
 
     case 'todo':
     default:
-        migrateNews($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
-        //migrateConferences($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
-        //migrateExhibitions($orig_conn, $dest_conn, $orig_prefix, $dest_prefix);
+        migrateNews($origin_conn, $orig_prefix);
+        migrateConferences($origin_conn, $orig_prefix);
         break;
 }
 
-closeConnection($orig_conn);
-closeConnection($dest_conn);
+$origin_conn->close();
 
-echo "Migración finalizada.";
-
-function getConnection($host, $user, $pass, $db) {
-    $conn = new mysqli($host, $user, $pass, $db);
-    if ($conn->connect_error) {
-        die("Error de conexión a BD ($db): " . $conn->connect_error);
-    }
-    $conn->set_charset("utf8mb4");
-    return $conn;
-}
-
-function closeConnection($conn) {
-    if ($conn) {
-        $conn->close();
-    }
-}
-
-
-/**
- * debug
- */
-function writeLog($message) {
-    $logFile = __DIR__ . '/migracion.log';
-    file_put_contents($logFile, date('Y-m-d H:i:s') . ' - ' . $message . "\n", FILE_APPEND);
-}
+echo "Migración finalizada correctamente.";
