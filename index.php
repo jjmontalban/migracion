@@ -1,16 +1,15 @@
 <?php
 /**
- * Script de migración de contenidos directamente integrado en WordPress
+ * Script de migración de contenidos
  */
 
-// Autoload de WordPress (para poder usar funciones WP y ACF)
 require_once __DIR__ . '/../wp-load.php';
 
 require_once __DIR__ . '/news/migrateNews.php';
 require_once __DIR__ . '/conferences/migrateConferences.php';
 
-use function migracion\news\migrateNews;
-use function migracion\conferences\migrateConferences;
+use function migration\news\migrateNews;
+use function migration\conferences\migrateConferences;
 
 // Tipo a migrar por parámetro GET (ejemplo: index.php?tipo=news)
 $tipo = isset($_GET['tipo']) ? sanitize_text_field($_GET['tipo']) : 'todo';
@@ -33,7 +32,7 @@ switch ($tipo) {
         break;
 
     case 'exhibitions':
-        echo "Migración de exposiciones aún no implementada.";
+        echo "TODO";
         break;
 
     case 'todo':

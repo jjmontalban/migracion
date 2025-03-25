@@ -1,5 +1,5 @@
 <?php
- namespace migracion\news;
+ namespace migration\news;
 /**
  * Migración de Noticias usando WordPress y ACF.
  */
@@ -11,8 +11,8 @@ function migrateNews($origin_conn, $orig_prefix) {
     // Obtener ids de noticias desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
-              AND post_status = 'publish' LIMIT 50";
-                /* AND ID IN (257130, 256983, 257066) */
+              AND post_status = 'publish'";
+        /* Noticias con todos los bloques AND ID IN (257130, 256983, 257066) */
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {
@@ -22,11 +22,9 @@ function migrateNews($origin_conn, $orig_prefix) {
 
     echo "Se encontraron " . $result->num_rows . " noticias<br>";
 
-    // Procesar cada noticia
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
 
-        // Obtener datos del post origen
         $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
         $res_post = $origin_conn->query($sql_post);
 
@@ -37,7 +35,6 @@ function migrateNews($origin_conn, $orig_prefix) {
 
         $post_data = $res_post->fetch_assoc();
 
-        // Crear el post directamente en WordPress
         $new_post = [
             'post_title'   => wp_slash($post_data['post_title']),
             'post_content' => wp_slash($post_data['post_content']),
@@ -79,7 +76,6 @@ function migrateNews($origin_conn, $orig_prefix) {
             $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
             
             if ($old_image_url) {
-                // Se reemplaza $post_id por $new_post_id
                 $new_thumb_id = migrate_image($old_image_url, $new_post_id);
                 if ($new_thumb_id) {
                     update_post_meta($new_post_id, '_thumbnail_id', $new_thumb_id);
@@ -90,8 +86,6 @@ function migrateNews($origin_conn, $orig_prefix) {
             update_field('c4_image_list', $metaData['_thumbnail_id'], $new_post_id);
         }
 
-            
-            
         // Migrar bloques ACF (Flexible Content)
         insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
             
@@ -121,7 +115,7 @@ function getMetaData($post_id, $conn, $orig_prefix) {
 }
 
 /**
- * Migrar categorías y etiquetas desde origen
+ * Migrar categorías y etiquetas
  */
 function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $sql = "
@@ -139,7 +133,7 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $terms_by_taxonomy = [];
 
     while ($row = $res->fetch_assoc()) {
-        // Omitir etiqueta específica "hashtag"
+        // Omitir "hashtag"
         if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
             continue;
         }
@@ -147,11 +141,9 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
         // Asegurar existencia del término
         ensureTermExists($row['name'], $row['slug'], $row['taxonomy']);
 
-        // Agrupar términos por taxonomía
         $terms_by_taxonomy[$row['taxonomy']][] = $row['slug'];
     }
 
-    // Asociar términos al nuevo post
     foreach ($terms_by_taxonomy as $taxonomy => $terms) {
         wp_set_object_terms($new_post_id, $terms, $taxonomy);
     }
@@ -168,7 +160,7 @@ function ensureTermExists($name, $slug, $taxonomy) {
 
 
 /**
- * Obtiene la URL de la imagen en el origen a partir de su ID.
+ * Obtiene la URL de la imagen
  */
 function get_old_image_url($old_image_id, $conn, $orig_prefix) {
     $sql = "SELECT guid FROM {$orig_prefix}posts WHERE ID = $old_image_id";
@@ -182,11 +174,8 @@ function get_old_image_url($old_image_id, $conn, $orig_prefix) {
 
 
 /**
- * Migra una imagen desde la URL del origen al WordPress de destino.
+ * Migra una imagen
  *
- * @param string $image_url URL de la imagen en el origen.
- * @param int    $post_id   ID del post al que se asociará la imagen.
- * @return int|false        ID del attachment migrado o false en caso de error.
  */
 function migrate_image($image_url, $post_id) {
     require_once ABSPATH . 'wp-admin/includes/image.php';

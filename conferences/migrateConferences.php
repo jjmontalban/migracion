@@ -1,5 +1,5 @@
 <?php
- namespace migracion\conferences;
+ namespace migration\conferences;
 /**
  * Migración de Conferencias usando WordPress y ACF.
  */
@@ -8,11 +8,10 @@ require_once __DIR__ . '/parseLayoutBlock.php';
 require_once __DIR__ . '/insertBlocksAcf.php';
 
 function migrateConferences($origin_conn, $orig_prefix) {
-    // Obtener ids de posts desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'conferencias'
-              AND post_status = 'publish' LIMIT 50";
-/* AND ID IN (219294, 247224, 231169, 238886, 243958, 242758, 242001, 228899) */
+              AND post_status = 'publish'";
+    /* Conferencias con todos los bloques AND ID IN (219294, 247224, 231169, 238886, 243958, 242758, 242001, 228899) */
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {
@@ -22,11 +21,9 @@ function migrateConferences($origin_conn, $orig_prefix) {
 
     echo "Se encontraron " . $result->num_rows . " conf<br>";
 
-    // Procesar cada conf
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
 
-        // Obtener datos del post origen
         $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
         $res_post = $origin_conn->query($sql_post);
 
@@ -37,7 +34,6 @@ function migrateConferences($origin_conn, $orig_prefix) {
 
         $post_data = $res_post->fetch_assoc();
 
-        // Crear el post directamente en WordPress
         $new_post = [
             'post_title'   => wp_slash($post_data['post_title']),
             'post_content' => wp_slash($post_data['post_content']),
@@ -81,7 +77,6 @@ function migrateConferences($origin_conn, $orig_prefix) {
             $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
             
             if ($old_image_url) {
-                // Se reemplaza $post_id por $new_post_id
                 $new_thumb_id = migrate_image($old_image_url, $new_post_id);
                 if ($new_thumb_id) {
                     update_post_meta($new_post_id, '_thumbnail_id', $new_thumb_id);
@@ -126,7 +121,7 @@ function getMetaData($post_id, $conn, $orig_prefix) {
  */
 function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $sql = "
-        SELECT t.name, t.slug
+        SELECT t.name, t.slug, tt.taxonomy
         FROM {$orig_prefix}term_relationships AS tr
         JOIN {$orig_prefix}term_taxonomy AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
         JOIN {$orig_prefix}terms AS t ON tt.term_id = t.term_id
@@ -137,32 +132,25 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $res = $origin_conn->query($sql);
     if (!$res || $res->num_rows === 0) return;
 
-    $terms = [];
+    $terms_by_taxonomy = [];
+
     while ($row = $res->fetch_assoc()) {
-        // Omito etiqueta específica "hashtag"
+        // Omitir "hashtag"
         if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
             continue;
         }
 
-        // Si el término es de origen 'categorias_conferencias', lo mapeo a 'conferences-category' en el destino
         $dest_taxonomy = ($row['taxonomy'] === 'categorias_conferencias') ? 'conferences-category' : $row['taxonomy'];
 
-        // Aseguro que el término exista en el destino
         ensureTermExists($row['name'], $row['slug'], $dest_taxonomy);
 
-        // Agrupo los términos por la taxonomía destino
         $terms_by_taxonomy[$dest_taxonomy][] = $row['slug'];
     }
 
-    // Asocio los términos al post migrado usando la taxonomía destino
     foreach ($terms_by_taxonomy as $taxonomy => $terms) {
         wp_set_object_terms($new_post_id, $terms, $taxonomy);
     }
 }
-
-
-
-
 
 /**
  * Crea el término si no existe en la taxonomía destino.
@@ -190,10 +178,6 @@ function get_old_image_url($old_image_id, $conn, $orig_prefix) {
 
 /**
  * Migra una imagen desde la URL del origen al WordPress de destino.
- *
- * @param string $image_url URL de la imagen en el origen.
- * @param int    $post_id   ID del post al que se asociará la imagen.
- * @return int|false        ID del attachment migrado o false en caso de error.
  */
 function migrate_image($image_url, $post_id) {
     require_once ABSPATH . 'wp-admin/includes/image.php';

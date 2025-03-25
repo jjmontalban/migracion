@@ -1,5 +1,5 @@
 <?php
-namespace migracion\news;
+namespace migration\news;
 
 require_once __DIR__ . '/mapBlocksNews.php';
 /**

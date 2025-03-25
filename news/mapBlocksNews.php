@@ -1,5 +1,5 @@
 <?php
-namespace migracion\news;
+namespace migration\news;
 
 /**
  * Funciones para construir los bloques ACF a partir de los layouts originales de noticias.
@@ -66,7 +66,7 @@ function buildImageBlock($i, $metaData, $flexField, $post_id, $origin_conn, $ori
     }
     return [
         'type'      => 'image',
-        'b20_title' => $caption,  // Se usará para Título y Leyenda
+        'b20_title' => $caption,
         'b20_image' => $new_img_id
     ];
 }
@@ -224,7 +224,6 @@ function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $
         $pieVal  = $metaData[$pieKey] ?? '';
 
         if ($old_imgId > 0) {
-            // Aquí se usan $origin_conn y $orig_prefix en el orden correcto:
             $old_image_url = get_old_image_url($old_imgId, $origin_conn, $orig_prefix);
             if (!$old_image_url) {
                 continue;

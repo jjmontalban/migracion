@@ -1,5 +1,5 @@
 <?php
-namespace migracion\conferences;
+namespace migration\conferences;
 
 require_once __DIR__ . '/mapBlocksConferences.php';
 /**
