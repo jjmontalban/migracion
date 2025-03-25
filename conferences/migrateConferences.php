@@ -11,10 +11,8 @@ function migrateConferences($origin_conn, $orig_prefix) {
     // Obtener ids de posts desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'conferencias'
-            AND ID IN (247224, 231169, 238886, 243958, 242758, 242001, 228899)
-              AND post_status = 'publish'
-              LIMIT 10";
-
+              AND post_status = 'publish' LIMIT 50";
+/* AND ID IN (219294, 247224, 231169, 238886, 243958, 242758, 242001, 228899) */
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {
@@ -69,11 +67,30 @@ function migrateConferences($origin_conn, $orig_prefix) {
         // Migrar campos ACF específicos
         /**
          * Inserta campos ACF usando update_field().
-         *  - c4_title (titulo_corto)
-         *  - c4_excerpt (descripcion_corta)
+         *  - c1_title (titulo_corto)
+         *  - c1_excerpt (descripcion_corta)
+         *  - c1_image_list (imagen_destacada)
+         *  - c1_date_start (noticia_fecha)
          */
-        update_field('c4_title', $metaData['titulo_corto'] ?? '', $new_post_id);
-        update_field('c4_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
+        update_field('c1_title', $metaData['titulo_corto'] ?? '', $new_post_id);
+        update_field('c1_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
+        update_field('c1_date_start', $metaData['noticia_fecha'] ?? '', $new_post_id);
+
+        if (!empty($metaData['_thumbnail_id'])) {
+            $old_thumb_id  = $metaData['_thumbnail_id'];
+            $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
+            
+            if ($old_image_url) {
+                // Se reemplaza $post_id por $new_post_id
+                $new_thumb_id = migrate_image($old_image_url, $new_post_id);
+                if ($new_thumb_id) {
+                    update_post_meta($new_post_id, '_thumbnail_id', $new_thumb_id);
+                    $metaData['_thumbnail_id'] = $new_thumb_id;
+                }
+            }
+            
+            update_field('c1_image_list', $metaData['_thumbnail_id'], $new_post_id);
+        }
 
         // Migrar bloques ACF (Flexible Content)
         insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
@@ -103,44 +120,35 @@ function getMetaData($post_id, $conn, $orig_prefix) {
 }
 
 /**
- * Migrar categorías y etiquetas desde origen
+ * Migrar la taxonomía de conferencias desde el origen a la del destino.
+ * Solo se mapea 'categorias_conferencias' (origen) a 'conferences-category' (destino).
  */
 function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
     $sql = "
-        SELECT tt.taxonomy, t.name, t.slug
+        SELECT t.name, t.slug
         FROM {$orig_prefix}term_relationships AS tr
         JOIN {$orig_prefix}term_taxonomy AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
         JOIN {$orig_prefix}terms AS t ON tt.term_id = t.term_id
-        WHERE tr.object_id = $orig_id
+        WHERE tr.object_id = $orig_id 
+          AND tt.taxonomy = 'categorias_conferencias'
     ";
     
     $res = $origin_conn->query($sql);
-
     if (!$res || $res->num_rows === 0) return;
 
-    $terms_by_taxonomy = [];
-
+    $terms = [];
     while ($row = $res->fetch_assoc()) {
-        // Omitir etiqueta específica "hashtag"
-        if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
-            continue;
-        }
-
-        // Asegurar existencia del término
-        ensureTermExists($row['name'], $row['slug'], $row['taxonomy']);
-
-        // Agrupar términos por taxonomía
-        $terms_by_taxonomy[$row['taxonomy']][] = $row['slug'];
+        // Aseguro que el término exista en la taxonomía destino 'conferences-category'
+        ensureTermExists($row['name'], $row['slug'], 'conferences-category');
+        $terms[] = $row['slug'];
     }
 
-    // Asociar términos al nuevo post
-    foreach ($terms_by_taxonomy as $taxonomy => $terms) {
-        wp_set_object_terms($new_post_id, $terms, $taxonomy);
-    }
+    // Asigno los términos al nuevo post usando la taxonomía destino
+    wp_set_object_terms($new_post_id, $terms, 'conferences-category');
 }
 
 /**
- * Crea el término si no existe.
+ * Crea el término si no existe en la taxonomía destino.
  */
 function ensureTermExists($name, $slug, $taxonomy) {
     if (!term_exists($slug, $taxonomy)) {

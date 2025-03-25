@@ -11,10 +11,8 @@ function migrateNews($origin_conn, $orig_prefix) {
     // Obtener ids de noticias desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
-              AND post_status = 'publish'
-              AND ID IN (257130, 256983, 257066)
-              LIMIT 10";
-
+              AND post_status = 'publish' LIMIT 50";
+                /* AND ID IN (257130, 256983, 257066) */
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {
@@ -71,6 +69,7 @@ function migrateNews($origin_conn, $orig_prefix) {
          * Inserta campos ACF usando update_field().
          *  - c4_title (titulo_corto)
          *  - c4_excerpt (descripcion_corta)
+         *  - c4_image_list (imagen_destacada)
          */
         update_field('c4_title', $metaData['titulo_corto'] ?? '', $new_post_id);
         update_field('c4_excerpt', $metaData['descripcion_corta'] ?? '', $new_post_id);
@@ -80,11 +79,11 @@ function migrateNews($origin_conn, $orig_prefix) {
             $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);
             
             if ($old_image_url) {
-                $new_thumb_id = migrate_image($old_image_url, $post_id);
+                // Se reemplaza $post_id por $new_post_id
+                $new_thumb_id = migrate_image($old_image_url, $new_post_id);
                 if ($new_thumb_id) {
-                    update_post_meta($post_id, '_thumbnail_id', $new_thumb_id);
+                    update_post_meta($new_post_id, '_thumbnail_id', $new_thumb_id);
                     $metaData['_thumbnail_id'] = $new_thumb_id;
-                    
                 }
             }
             
