@@ -7,11 +7,16 @@
 require_once __DIR__ . '/parseLayoutBlock.php';
 require_once __DIR__ . '/insertBlocksAcf.php';
 
+require_once ABSPATH . 'wp-admin/includes/image.php';
+require_once ABSPATH . 'wp-admin/includes/file.php';
+require_once ABSPATH . 'wp-admin/includes/media.php';
+
+
 function migrateNews($origin_conn, $orig_prefix) {
     // Obtener ids de noticias desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
-              AND post_status = 'publish'";
+              AND post_status = 'publish' LIMIT 50";
         /* Noticias con todos los bloques AND ID IN (257130, 256983, 257066) */
     $result = $origin_conn->query($sql);
 
@@ -178,9 +183,12 @@ function get_old_image_url($old_image_id, $conn, $orig_prefix) {
  *
  */
 function migrate_image($image_url, $post_id) {
-    require_once ABSPATH . 'wp-admin/includes/image.php';
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/media.php';
+    static $migrated_images = []; // cache de imagenes migradas
+
+    // Si ya se ha migrado esta imagen, devolver el ID
+    if (isset($migrated_images[$image_url])) {
+        return $migrated_images[$image_url];
+    }
 
     $tmp = download_url($image_url);
     if (is_wp_error($tmp)) {
@@ -197,5 +205,9 @@ function migrate_image($image_url, $post_id) {
         @unlink($file_array['tmp_name']);
         return false;
     }
+
+    // Guardar en la caché
+    $migrated_images[$image_url] = $attachment_id;
+
     return $attachment_id;
 }

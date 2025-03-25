@@ -10,7 +10,7 @@ require_once __DIR__ . '/insertBlocksAcf.php';
 function migrateConferences($origin_conn, $orig_prefix) {
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'conferencias'
-              AND post_status = 'publish'";
+              AND post_status = 'publish' LIMIT 50";
     /* Conferencias con todos los bloques AND ID IN (219294, 247224, 231169, 238886, 243958, 242758, 242001, 228899) */
     $result = $origin_conn->query($sql);
 

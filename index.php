@@ -11,8 +11,8 @@ require_once __DIR__ . '/conferences/migrateConferences.php';
 use function migration\news\migrateNews;
 use function migration\conferences\migrateConferences;
 
-// Tipo a migrar por parámetro GET (ejemplo: index.php?tipo=news)
-$tipo = isset($_GET['tipo']) ? sanitize_text_field($_GET['tipo']) : 'todo';
+// Tipo a migrar por parámetro GET (ejemplo: index.php?type=news)
+$type = isset($_GET['type']) ? sanitize_text_field($_GET['type']) : 'all';
 
 // Conexión remota a DB origen
 $origin_conn = new mysqli('localhost', 'root', '', 'backup_pro');
@@ -22,7 +22,7 @@ if ($origin_conn->connect_error) {
 $origin_conn->set_charset("utf8mb4");
 $orig_prefix = 'wi_';
 
-switch ($tipo) {
+switch ($type) {
     case 'news':
         migrateNews($origin_conn, $orig_prefix);
         break;
@@ -35,7 +35,7 @@ switch ($tipo) {
         echo "TODO";
         break;
 
-    case 'todo':
+    case 'all':
     default:
         migrateNews($origin_conn, $orig_prefix);
         migrateConferences($origin_conn, $orig_prefix);
