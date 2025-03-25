@@ -119,6 +119,7 @@ function getMetaData($post_id, $conn, $orig_prefix) {
     return $metaData;
 }
 
+
 /**
  * Migrar la taxonomía de conferencias desde el origen a la del destino.
  * Solo se mapea 'categorias_conferencias' (origen) a 'conferences-category' (destino).
@@ -138,14 +139,30 @@ function migrateTaxonomies($orig_id, $new_post_id, $origin_conn, $orig_prefix) {
 
     $terms = [];
     while ($row = $res->fetch_assoc()) {
-        // Aseguro que el término exista en la taxonomía destino 'conferences-category'
-        ensureTermExists($row['name'], $row['slug'], 'conferences-category');
-        $terms[] = $row['slug'];
+        // Omito etiqueta específica "hashtag"
+        if ($row['taxonomy'] === 'post_tag' && strtolower($row['slug']) === 'hashtag') {
+            continue;
+        }
+
+        // Si el término es de origen 'categorias_conferencias', lo mapeo a 'conferences-category' en el destino
+        $dest_taxonomy = ($row['taxonomy'] === 'categorias_conferencias') ? 'conferences-category' : $row['taxonomy'];
+
+        // Aseguro que el término exista en el destino
+        ensureTermExists($row['name'], $row['slug'], $dest_taxonomy);
+
+        // Agrupo los términos por la taxonomía destino
+        $terms_by_taxonomy[$dest_taxonomy][] = $row['slug'];
     }
 
-    // Asigno los términos al nuevo post usando la taxonomía destino
-    wp_set_object_terms($new_post_id, $terms, 'conferences-category');
+    // Asocio los términos al post migrado usando la taxonomía destino
+    foreach ($terms_by_taxonomy as $taxonomy => $terms) {
+        wp_set_object_terms($new_post_id, $terms, $taxonomy);
+    }
 }
+
+
+
+
 
 /**
  * Crea el término si no existe en la taxonomía destino.
