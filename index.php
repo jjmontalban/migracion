@@ -39,9 +39,9 @@ switch ($type) {
     
     case 'all':
         default:
-        migrateNews($origin_conn, $orig_prefix);
         migrateConferences($origin_conn, $orig_prefix);
         migrateExhibitions($origin_conn, $orig_prefix);
+        migrateNews($origin_conn, $orig_prefix);
         break;
 }
 

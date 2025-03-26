@@ -14,7 +14,7 @@ require_once ABSPATH . 'wp-admin/includes/media.php';
 function migrateConferences($origin_conn, $orig_prefix) {
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'conferencias'
-              AND post_status = 'publish' LIMIT 10";
+              AND post_status = 'publish'";
     
     $result = $origin_conn->query($sql);
 
@@ -181,12 +181,20 @@ function get_old_image_url($old_image_id, $conn, $orig_prefix) {
  * Migra una imagen
  *
  */
-function migrate_image($image_url, $post_id) {
-    static $migrated_images = []; // cache de imagenes migradas
+function migrate_image($image_url, $post_id, $caption = '') {
+    static $migrated_images = [];
 
-    // Si ya se ha migrado esta imagen, devolver el ID
     if (isset($migrated_images[$image_url])) {
-        return $migrated_images[$image_url];
+        $id = $migrated_images[$image_url];
+
+        if (!empty($caption)) {
+            wp_update_post([
+                'ID'           => $id,
+                'post_excerpt' => sanitize_text_field($caption)
+            ]);
+        }
+
+        return $id;
     }
 
     $tmp = download_url($image_url);
@@ -205,8 +213,14 @@ function migrate_image($image_url, $post_id) {
         return false;
     }
 
-    // Guardar en la caché
     $migrated_images[$image_url] = $attachment_id;
+
+    if (!empty($caption)) {
+        wp_update_post([
+            'ID'           => $attachment_id,
+            'post_excerpt' => sanitize_text_field($caption)
+        ]);
+    }
 
     return $attachment_id;
 }

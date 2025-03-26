@@ -60,7 +60,7 @@ function buildImageBlock($i, $metaData, $flexField, $post_id, $origin_conn, $ori
     if (!$old_image_url) {
         return null;
     }
-    $new_img_id = migrate_image($old_image_url, $post_id);
+    $new_img_id = migrate_image($old_image_url, $post_id, $caption);
     if (!$new_img_id) {
         return null;
     }
@@ -210,29 +210,27 @@ function buildHeadingTextMultipleColumns($i, $metaData, $flexField, $post_id, $o
 function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix) {
     $repKey = "{$flexField}_{$i}_bloque_noticias_detalle_slider_imagenes";
     $count  = (int)($metaData[$repKey] ?? 0);
-    if ($count <= 0) {
-        return null;
-    }
+    if ($count <= 0) return null;
 
     $items = [];
     $captions = [];
 
     for ($r = 0; $r < $count; $r++) {
-        $imgKey  = "{$repKey}_{$r}_bloque_noticias_detalle_imagen";
-        $pieKey  = "{$repKey}_{$r}_bloque_noticias_detalle_pie";
+        $imgKey = "{$repKey}_{$r}_bloque_noticias_detalle_imagen";
+        $pieKey = "{$repKey}_{$r}_bloque_noticias_detalle_imagen_pie";
+
         $old_imgId = extractImageId($metaData[$imgKey] ?? '');
-        $pieVal  = $metaData[$pieKey] ?? '';
+        $pieVal    = $metaData[$pieKey] ?? '';
 
         if ($old_imgId > 0) {
             $old_image_url = get_old_image_url($old_imgId, $origin_conn, $orig_prefix);
-            if (!$old_image_url) {
-                continue;
-            }
-            $new_img_id = migrate_image($old_image_url, $post_id);
-            if (!$new_img_id) {
-                continue;
-            }
+            if (!$old_image_url) continue;
+
+            $new_img_id = migrate_image($old_image_url, $post_id, $pieVal);
+            if (!$new_img_id) continue;
+
             $items[] = [ 'b24i_image' => $new_img_id ];
+
             if (!empty($pieVal)) {
                 $captions[] = [
                     'id'      => $new_img_id,
@@ -242,9 +240,7 @@ function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $
         }
     }
 
-    if (empty($items)) {
-        return null;
-    }
+    if (empty($items)) return null;
 
     return [
         'acf_block' => [

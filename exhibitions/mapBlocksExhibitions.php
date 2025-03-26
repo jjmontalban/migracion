@@ -61,7 +61,7 @@ function buildImageBlock($i, $metaData, $flexField, $post_id, $origin_conn, $ori
     if (!$old_image_url) {
         return null;
     }
-    $new_img_id = migrate_image($old_image_url, $post_id);
+    $new_img_id = migrate_image($old_image_url, $post_id, $caption);
     if (!$new_img_id) {
         return null;
     }
@@ -117,7 +117,7 @@ function buildIframeBlock($i, $metaData, $flexField) {
 }
 
 /**
- * Bloque:  image-text-slider (testimonios)
+ * Bloque galería: gallery-slider
  */
 function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix) {
     $repKey = "{$flexField}_{$i}_ex_bc_images";
@@ -132,6 +132,7 @@ function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $
     for ($r = 0; $r < $count; $r++) {
         $imgKey  = "{$repKey}_{$r}_ex_bc_image";
         $pieKey  = "{$repKey}_{$r}_ex_bc_footer";
+
         $old_imgId = extractImageId($metaData[$imgKey] ?? '');
         $pieVal  = $metaData[$pieKey] ?? '';
 
@@ -140,11 +141,12 @@ function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $
             if (!$old_image_url) {
                 continue;
             }
-            $new_img_id = migrate_image($old_image_url, $post_id);
+            $new_img_id = migrate_image($old_image_url, $post_id, $pieVal);
             if (!$new_img_id) {
                 continue;
             }
             $items[] = [ 'b24i_image' => $new_img_id ];
+            
             if (!empty($pieVal)) {
                 $captions[] = [
                     'id'      => $new_img_id,
