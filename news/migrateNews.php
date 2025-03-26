@@ -16,8 +16,8 @@ function migrateNews($origin_conn, $orig_prefix) {
     // Obtener ids de noticias desde origen
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'noticias'
-              AND post_status = 'publish' LIMIT 50";
-        /* Noticias con todos los bloques AND ID IN (257130, 256983, 257066) */
+              AND post_status = 'publish' LIMIT 10";
+    
     $result = $origin_conn->query($sql);
 
     if (!$result || $result->num_rows === 0) {

@@ -22,7 +22,7 @@ function extractImageId($value) {
 }
 
 /**
- * Bloque: Texto varias columnas (layout ex_b_text)
+ * Bloque: Texto varias columnas (2 columnas)
  */
 function buildTextMultipleColumns($i, $metaData, $flexField) {
     // Se usa el nombre del subcampo: ex_bt_text
@@ -31,6 +31,13 @@ function buildTextMultipleColumns($i, $metaData, $flexField) {
     if (empty($content)) {
         return null;
     }
+
+     // Si encuentra un <a> con clase "btn-buy btn_green" las reemplaza por
+    // "bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right".
+    $pattern = '/<a([^>]*)class="(?:btn-buy\s+btn_green|btn_green\s+btn-buy)"([^>]*)>/i';
+    $replacement = '<a$1class="bta bta--light bta-icon bta-icon--right bta-icon--right--arrow-right"$2>';
+    $content = preg_replace($pattern, $replacement, $content);
+
     return [
         'type'        => 'text-multiple-columns',
         'b29_columns' => '2',
@@ -39,7 +46,7 @@ function buildTextMultipleColumns($i, $metaData, $flexField) {
 }
 
 /**
- * Bloque: Imagen (layout ex_b_image)
+ * Bloque: Imagen
  */
 function buildImageBlock($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix) {
     // Se usan los nombres: ex_bi_image y ex_bi_footer
@@ -84,18 +91,19 @@ function buildVideoBlock($i, $metaData, $flexField) {
 }
 
 /**
- * Bloque: Iframe (layout ex_b_iframe)
+ * Bloque: Iframe
  */
 function buildIframeBlock($i, $metaData, $flexField) {
-    // Se asumen los subcampos: ex_bif_script, ex_bif_id, ex_bif_alt, ex_bif_type
-    $scriptKey = "{$flexField}_{$i}_ex_bif_script";
-    $idKey     = "{$flexField}_{$i}_ex_bif_id";
-    $altKey    = "{$flexField}_{$i}_ex_bif_alt";
-    $typeKey   = "{$flexField}_{$i}_ex_bif_type";
+    $scriptKey = "{$flexField}_{$i}_bq_elige_script";
+    $idKey     = "{$flexField}_{$i}_bq_id";
+    $altKey    = "{$flexField}_{$i}_bq_alt";
+    $typeKey   = "{$flexField}_{$i}_bq_tipo";
+
     $script = $metaData[$scriptKey] ?? '';
     $id     = $metaData[$idKey] ?? '';
     $alt    = $metaData[$altKey] ?? '';
     $type   = $metaData[$typeKey] ?? '';
+
     if (empty($script) && empty($id)) {
         return null;
     }
@@ -109,51 +117,53 @@ function buildIframeBlock($i, $metaData, $flexField) {
 }
 
 /**
- * Bloque: Galería/Carrousel (layout ex_b_carrousel)
+ * Bloque:  image-text-slider (testimonios)
  */
 function buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix) {
-    // Se usa el repeater con el nombre: ex_bc_images
     $repKey = "{$flexField}_{$i}_ex_bc_images";
-    $rows = maybe_unserialize($metaData[$repKey] ?? []);
-    if (empty($rows) || !is_array($rows)) {
-         return null;
+    $count  = (int)($metaData[$repKey] ?? 0);
+    if ($count <= 0) {
+        return null;
     }
-    $count = count($rows);
+
     $items = [];
     $captions = [];
+
     for ($r = 0; $r < $count; $r++) {
-         // Se esperan los subcampos: ex_bc_image y ex_bc_footer
-         $imgKey = "{$repKey}_{$r}_ex_bc_image";
-         $pieKey = "{$repKey}_{$r}_ex_bc_footer";
-         $old_imgId = extractImageId($metaData[$imgKey] ?? '');
-         $pieVal = $metaData[$pieKey] ?? '';
-         if ($old_imgId > 0) {
-             $old_image_url = \migration\exhibitions\get_old_image_url($old_imgId, $origin_conn, $orig_prefix);
-             if (!$old_image_url) {
-                 continue;
-             }
-             $new_img_id = \migration\exhibitions\migrate_image($old_image_url, $post_id);
-             if (!$new_img_id) {
-                 continue;
-             }
-             $items[] = [ 'b24i_image' => $new_img_id ];
-             if (!empty($pieVal)) {
-                  $captions[] = [
-                      'id'      => $new_img_id,
-                      'caption' => $pieVal
-                  ];
-             }
-         }
+        $imgKey  = "{$repKey}_{$r}_ex_bc_image";
+        $pieKey  = "{$repKey}_{$r}_ex_bc_footer";
+        $old_imgId = extractImageId($metaData[$imgKey] ?? '');
+        $pieVal  = $metaData[$pieKey] ?? '';
+
+        if ($old_imgId > 0) {
+            $old_image_url = get_old_image_url($old_imgId, $origin_conn, $orig_prefix);
+            if (!$old_image_url) {
+                continue;
+            }
+            $new_img_id = migrate_image($old_image_url, $post_id);
+            if (!$new_img_id) {
+                continue;
+            }
+            $items[] = [ 'b24i_image' => $new_img_id ];
+            if (!empty($pieVal)) {
+                $captions[] = [
+                    'id'      => $new_img_id,
+                    'caption' => $pieVal
+                ];
+            }
+        }
     }
+
     if (empty($items)) {
-         return null;
+        return null;
     }
+
     return [
-         'acf_block' => [
-              'type'            => 'gallery-slider',
-              'b24_image_width' => 'sameWidth',
-              'b24_images'      => $items
-         ],
-         'captions' => $captions
+        'acf_block' => [
+            'type'            => 'gallery-slider',
+            'b24_image_width' => 'sameWidth',
+            'b24_images'      => $items
+        ],
+        'captions' => $captions
     ];
 }

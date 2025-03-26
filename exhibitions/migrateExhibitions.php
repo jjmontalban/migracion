@@ -14,7 +14,7 @@ require_once ABSPATH . 'wp-admin/includes/media.php';
 function migrateExhibitions($origin_conn, $orig_prefix) {
     $sql = "SELECT ID FROM {$orig_prefix}posts
             WHERE post_type = 'exposiciones'
-              AND post_status = 'publish' AND ID IN ( 213366,213371 , 213380, 213386, 213304)";
+            AND post_status = 'publish' LIMIT 10";
 
     $result = $origin_conn->query($sql);
 
@@ -75,8 +75,6 @@ function migrateExhibitions($origin_conn, $orig_prefix) {
         update_field('c3_date_start', $fechas['start'] ?? '', $new_post_id);
         update_field('c3_date_end', $fechas['end'] ?? '', $new_post_id);
         
-        getDateStartEnd($metaData);
-
         if (!empty($metaData['_thumbnail_id'])) {
             $old_thumb_id  = $metaData['_thumbnail_id'];
             $old_image_url = get_old_image_url($old_thumb_id, $origin_conn, $orig_prefix);

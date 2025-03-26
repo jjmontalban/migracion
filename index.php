@@ -13,7 +13,7 @@ use function migration\news\migrateNews;
 use function migration\conferences\migrateConferences;
 use function migration\exhibitions\migrateExhibitions;
 
-// Tipo a migrar por parámetro GET (ejemplo: index.php?type=news)
+// Tipo a migrar por parámetro GET (ejemplo: /index.php?type=news)
 $type = isset($_GET['type']) ? sanitize_text_field($_GET['type']) : 'all';
 
 // Conexión remota a DB origen

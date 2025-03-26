@@ -12,15 +12,19 @@ function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions, $post_
         case 'ex_b_text':
             $block = buildTextMultipleColumns($i, $metaData, $flexField);
             break;
+
         case 'ex_b_image':
             $block = buildImageBlock($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix);
             break;
+
         case 'ex_b_video':
             $block = buildVideoBlock($i, $metaData, $flexField);
             break;
-        case 'ex_b_iframe':
+
+        case 'bloque_scripts':
             $block = buildIframeBlock($i, $metaData, $flexField);
             break;
+
         case 'ex_b_carrousel':
             $result = buildGallerySlider($i, $metaData, $flexField, $post_id, $origin_conn, $orig_prefix);
             if ($result && isset($result['acf_block'])) {
@@ -30,6 +34,7 @@ function parseLayoutBlock($layout, $i, $metaData, $flexField, &$captions, $post_
                 $block = null;
             }
             break;
+            
         default:
             $block = null;
             break;
