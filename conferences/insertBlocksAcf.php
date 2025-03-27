@@ -82,17 +82,4 @@ function insertBlocksIntoACF($post_id, $post_data, $metaData, $origin_conn, $ori
     // Guardar los bloques usando la API de ACF (campo 'c1_blocks')
     update_field('c1_blocks', $blocks, $post_id);
 
-    // Actualizar leyendas de imágenes (captions)
-    if (!empty($captions) && is_array($captions)) {
-        foreach ($captions as $c) {
-            $img_id  = (int)$c['id'];
-            $caption = sanitize_text_field($c['caption']);
-            if ($img_id > 0 && !empty($caption)) {
-                wp_update_post([
-                    'ID'           => $img_id,
-                    'post_excerpt' => $caption
-                ]);
-            }
-        }
-    }
 }

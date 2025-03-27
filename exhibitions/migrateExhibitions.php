@@ -12,9 +12,13 @@ require_once ABSPATH . 'wp-admin/includes/file.php';
 require_once ABSPATH . 'wp-admin/includes/media.php';
 
 function migrateExhibitions($origin_conn, $orig_prefix) {
+    $lastMigrated = (int) get_option('migration_ex_last_id', 0);
+    
     $sql = "SELECT ID FROM {$orig_prefix}posts
-            WHERE post_type = 'exposiciones'
-            AND post_status = 'publish'";
+        WHERE post_type = 'exposiciones'
+        AND post_status = 'publish'
+        AND ID > $lastMigrated
+        ORDER BY ID ASC";
 
     $result = $origin_conn->query($sql);
 
@@ -27,8 +31,10 @@ function migrateExhibitions($origin_conn, $orig_prefix) {
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
 
-        // Obtener datos del post origen
-        $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
+         // ultimo id migrado
+         update_option('migration_ex_last_id', $orig_id);
+
+         $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
         $res_post = $origin_conn->query($sql_post);
 
         if (!$res_post || $res_post->num_rows === 0) {

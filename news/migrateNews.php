@@ -13,10 +13,13 @@ require_once ABSPATH . 'wp-admin/includes/media.php';
 
 
 function migrateNews($origin_conn, $orig_prefix) {
-    // Obtener ids de noticias desde origen
+    $lastMigrated = (int) get_option('migration_news_last_id', 0);
+
     $sql = "SELECT ID FROM {$orig_prefix}posts
-            WHERE post_type = 'noticias'
-              AND post_status = 'publish'";
+        WHERE post_type = 'noticias'
+        AND post_status = 'publish'
+        AND ID > $lastMigrated
+        ORDER BY ID ASC";
     
     $result = $origin_conn->query($sql);
 
@@ -29,6 +32,9 @@ function migrateNews($origin_conn, $orig_prefix) {
 
     while ($row = $result->fetch_assoc()) {
         $orig_id = (int)$row['ID'];
+
+        // ultimo id migrado
+        update_option('migration_news_last_id', $orig_id);
 
         $sql_post = "SELECT * FROM {$orig_prefix}posts WHERE ID = $orig_id";
         $res_post = $origin_conn->query($sql_post);
@@ -93,7 +99,6 @@ function migrateNews($origin_conn, $orig_prefix) {
 
         // Migrar bloques ACF (Flexible Content)
         insertBlocksIntoACF($new_post_id, $post_data, $metaData, $origin_conn, $orig_prefix);
-            
     }
 
     echo "Migración de noticias completada.<br>";
